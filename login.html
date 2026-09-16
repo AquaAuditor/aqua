@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Iniciar sesión — Aqua Auditore</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #070C12;
+    --bg-soft: #0E1B26;
+    --aqua: #4FD9E0;
+    --text: #DCEFF1;
+    --text-soft: #7C9AA0;
+    --line: rgba(79,217,224,0.14);
+  }
+  *{ box-sizing: border-box; }
+  body{
+    margin:0;
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background: var(--bg);
+    color: var(--text);
+    font-family:'Inter', sans-serif;
+  }
+  .card{
+    background: var(--bg-soft);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:36px;
+    width:100%;
+    max-width:380px;
+  }
+  h1{
+    font-family:'Sora', sans-serif;
+    font-size:1.3rem;
+    margin:0 0 24px;
+  }
+  h1 span{ color: var(--aqua); }
+  label{
+    display:block;
+    font-size:0.85rem;
+    color: var(--text-soft);
+    margin-bottom:16px;
+  }
+  input{
+    display:block;
+    width:100%;
+    margin-top:6px;
+    padding:10px 12px;
+    background: var(--bg);
+    border:1px solid var(--line);
+    border-radius:6px;
+    color: var(--text);
+    font-family:'Inter', sans-serif;
+    font-size:0.92rem;
+  }
+  .btn{
+    width:100%;
+    padding:11px 16px;
+    border-radius:6px;
+    font-size:0.92rem;
+    cursor:pointer;
+    border:1px solid var(--aqua);
+    background: var(--aqua);
+    color:#06171a;
+    font-weight:600;
+    font-family:'Inter', sans-serif;
+  }
+  .btn:hover{ filter:brightness(1.08); }
+  .error{
+    color:#E88A8A;
+    font-size:0.82rem;
+    margin:-8px 0 16px;
+    display:none;
+  }
+  .back{
+    display:block;
+    text-align:center;
+    margin-top:18px;
+    font-size:0.85rem;
+    color: var(--text-soft);
+    text-decoration:none;
+  }
+  .back:hover{ color: var(--aqua); }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>Iniciar sesión — Aqua <span>Auditore</span></h1>
+    <form id="login-form">
+      <label>Correo<input type="email" id="l-email" required></label>
+      <label>Contraseña<input type="password" id="l-password" required></label>
+      <p class="error" id="login-error"></p>
+      <button type="submit" class="btn">Entrar</button>
+    </form>
+    <a class="back" href="index.html">← Volver al sitio</a>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    function showError(msg){
+      const el = document.getElementById('login-error');
+      el.textContent = msg;
+      el.style.display = 'block';
+    }
+
+    // Si algo revienta en cualquier parte del script, lo mostramos en pantalla
+    // en vez de que solo aparezca (invisible para el usuario) en la consola.
+    window.addEventListener('error', function(e){
+      showError('Error de script: ' + e.message);
+    });
+
+    if (typeof window.supabase === 'undefined') {
+      showError('No se pudo cargar la librería de Supabase (revisa tu conexión, adblocker o antivirus con protección web).');
+    } else {
+      /* Mismas llaves que en index.html */
+      const SUPABASE_URL = 'https://dolhldpxkkkyqfqkerbg.supabase.co';
+      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRvbGhsZHB4a2treXFmcWtlcmJnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwODE4ODQsImV4cCI6MjEwNDY1Nzg4NH0.kqVg2n8T1p2smpck1uJLQLW07V5s71pidn4SJGaZbSk';
+      const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+      document.getElementById('login-form').addEventListener('submit', async function(e){
+        e.preventDefault();
+        showError('');
+        document.getElementById('login-error').style.display = 'none';
+        const email = document.getElementById('l-email').value.trim();
+        const password = document.getElementById('l-password').value;
+        try {
+          const { error } = await supabase.auth.signInWithPassword({ email: email, password: password });
+          if (error) {
+            showError(error.message || 'Correo o contraseña incorrectos.');
+            return;
+          }
+          window.location.href = 'admin.html';
+        } catch (err) {
+          showError('Error al conectar con Supabase: ' + err.message);
+        }
+      });
+    }
+  </script>
+</body>
+</html>
