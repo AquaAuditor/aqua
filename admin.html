@@ -129,8 +129,20 @@
   .img-preview button{ background:none; border:none; color: var(--text-soft); font-size: 0.78rem; cursor:pointer; padding:0; text-decoration: underline; text-underline-offset:3px; font-family:'Inter'; }
   .img-preview button:hover{ color: var(--aqua); }
 
+  /* Lista de videos en el panel */
+  .video-row{ display:grid; grid-template-columns: 150px 1fr; gap: 18px; padding: 18px 0; border-bottom: 1px solid var(--line); align-items:start; }
+  .video-row:last-child{ border-bottom:none; }
+  .video-row img{ width: 150px; aspect-ratio: 16/9; object-fit: cover; border-radius: 6px; background:#000; }
+  .video-row h3{ font-size: 1.05rem; margin-bottom: 4px; }
+  .video-row .meta{ font-size: 0.8rem; color: var(--text-soft); display:flex; gap: 14px; align-items:center; flex-wrap:wrap; }
+  .video-row p{ color: var(--text-soft); margin: 8px 0 0; font-size: 0.9rem; white-space: pre-line; }
+  .video-row .tag{ display:inline-flex; align-items:center; gap: 7px; }
+  .dot{ width: 8px; height: 8px; border-radius: 50%; flex-shrink:0; display:inline-block; }
+
   @media (max-width: 620px){
     .panel-row{ grid-template-columns: 1fr; }
+    .video-row{ grid-template-columns: 1fr; }
+    .video-row img{ width: 100%; }
     .post{ grid-template-columns: 1fr; gap: 6px; }
     .post .date{ display:flex; align-items:baseline; gap:8px; }
     .post .date strong{ font-size: 1.05rem; }
@@ -239,7 +251,53 @@
     </div>
   </section>
 
+  <section class="section" id="videos">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>YouTube</h2>
+        <button class="btn primary" onclick="openVideoModal()">+ Nuevo video</button>
+      </div>
+      <form class="panel" id="form-videos-head">
+        <label>Frase corta (arriba del título)<input type="text" id="c-videos_kicker" placeholder="Canal de YouTube"></label>
+        <label>Título de la página<input type="text" id="c-videos_title" placeholder="Mis videos"></label>
+        <label>Texto de introducción<textarea id="c-videos_lede" rows="3" placeholder="Gameplays, momentos y todo lo que voy grabando..."></textarea></label>
+        <div class="panel-actions">
+          <span class="save-status" id="status-videos-head"></span>
+          <button type="submit" class="btn primary">Guardar cabecera</button>
+        </div>
+      </form>
+      <div id="videos-list"><p class="helper-note">Cargando...</p></div>
+    </div>
+  </section>
+
   <div style="height:40px;"></div>
+
+  <div class="modal-overlay" id="video-modal-overlay">
+    <div class="modal">
+      <h3 id="video-modal-title">Nuevo video</h3>
+      <form id="video-form">
+        <input type="hidden" id="v-id">
+        <label>Link de YouTube<input type="text" id="v-url" placeholder="https://www.youtube.com/watch?v=..." required></label>
+        <img id="v-preview" style="display:none; width:100%; border-radius:8px; margin-bottom:16px;" alt="">
+        <label>Título<input type="text" id="v-title" required></label>
+        <label>Fecha<input type="date" id="v-date" required></label>
+        <label>Juego
+          <select id="v-game">
+            <option value="destiny">Destiny 2</option>
+            <option value="minecraft">Minecraft</option>
+            <option value="genshin">Genshin Impact</option>
+            <option value="zzz">Zenless Zone Zero</option>
+            <option value="hsr">Honkai Star Rail</option>
+          </select>
+        </label>
+        <label>Descripción (opcional)<textarea id="v-description" rows="3"></textarea></label>
+        <div class="modal-actions">
+          <button type="button" class="btn ghost" id="video-btn-cancel">Cancelar</button>
+          <button type="submit" class="btn primary">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <div class="modal-overlay" id="modal-overlay">
     <div class="modal">
@@ -374,7 +432,8 @@
     let siteContent = {};
     const pendingImages = {};   // key -> dataURL (nueva), null (volver a original) o undefined (sin cambios)
 
-    const TEXT_KEYS = ['hero_kicker','hero_title','hero_lede','about_title','about_body','link_twitch','link_discord','link_x'];
+    const TEXT_KEYS = ['hero_kicker','hero_title','hero_lede','about_title','about_body','link_twitch','link_discord','link_x',
+                       'videos_kicker','videos_title','videos_lede'];
     const IMAGE_KEYS = ['about_image','logo_image'];
 
     async function loadSiteContent(){
@@ -428,6 +487,116 @@
       e.preventDefault();
       saveSiteContent(['logo_image','link_twitch','link_discord','link_x'], 'status-brand');
     });
+    document.getElementById('form-videos-head').addEventListener('submit', e => {
+      e.preventDefault();
+      saveSiteContent(['videos_kicker','videos_title','videos_lede'], 'status-videos-head');
+    });
+
+    /* ---------- Videos de YouTube (tabla `videos`) ---------- */
+    let videos = [];
+
+    function videoRowHtml(v){
+      const g = GAMES[v.game] || {label:v.game || '', color:'var(--aqua)'};
+      const [y,m,d] = (v.date || '--').split('-');
+      return `
+      <div class="video-row">
+        <img src="https://i.ytimg.com/vi/${v.video_id}/mqdefault.jpg" alt="">
+        <div>
+          <h3>${escapeHtml(v.title)}</h3>
+          <div class="meta">
+            <span class="tag"><span class="dot" style="background:${g.color}"></span>${g.label}</span>
+            <span>${d} ${MONTHS[parseInt(m,10)-1] || ''} ${y}</span>
+          </div>
+          ${v.description ? `<p>${escapeHtml(v.description)}</p>` : ''}
+          <div class="admin-actions">
+            <button onclick="openVideoModal('${v.id}')">Editar</button>
+            <button onclick="deleteVideo('${v.id}')">Eliminar</button>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    async function loadVideos(){
+      const { data, error } = await db.from('videos').select('*').order('date', {ascending:false});
+      const el = document.getElementById('videos-list');
+      if(error){
+        console.error(error);
+        el.innerHTML = '<p class="helper-note">No se pudieron cargar los videos (¿existe la tabla videos?)</p>';
+        return;
+      }
+      videos = data;
+      el.innerHTML = videos.map(videoRowHtml).join('') || '<p class="helper-note">Aún no hay videos.</p>';
+    }
+
+    function openVideoModal(id){
+      const form = document.getElementById('video-form');
+      form.reset();
+      document.getElementById('v-preview').style.display = 'none';
+      document.getElementById('v-id').value = id || '';
+      document.getElementById('video-modal-title').textContent = id ? 'Editar video' : 'Nuevo video';
+      if(id){
+        const v = videos.find(x => String(x.id) === String(id));
+        if(v){
+          document.getElementById('v-url').value = v.url || '';
+          document.getElementById('v-title').value = v.title;
+          document.getElementById('v-date').value = v.date;
+          document.getElementById('v-game').value = v.game || 'destiny';
+          document.getElementById('v-description').value = v.description || '';
+          showVideoPreview(v.video_id);
+        }
+      } else {
+        document.getElementById('v-date').value = new Date().toISOString().slice(0,10);
+      }
+      document.getElementById('video-modal-overlay').classList.add('open');
+    }
+    function closeVideoModal(){ document.getElementById('video-modal-overlay').classList.remove('open'); }
+
+    function showVideoPreview(videoId){
+      const prev = document.getElementById('v-preview');
+      if(!videoId){ prev.style.display = 'none'; return; }
+      prev.src = `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`;
+      prev.style.display = 'block';
+    }
+
+    document.getElementById('v-url').addEventListener('input', e => {
+      showVideoPreview(parseYouTubeId(e.target.value));
+    });
+
+    async function deleteVideo(id){
+      if(!confirm('¿Seguro que quieres eliminar este video?')) return;
+      const { error } = await db.from('videos').delete().eq('id', id);
+      if(error){ alert('No se pudo eliminar: ' + error.message); return; }
+      await loadVideos();
+    }
+
+    document.getElementById('video-form').addEventListener('submit', async e => {
+      e.preventDefault();
+      const id = document.getElementById('v-id').value;
+      const url = document.getElementById('v-url').value.trim();
+      const video_id = parseYouTubeId(url);
+      if(!video_id){ alert('Ese link no parece un video de YouTube. Pega el link completo del video.'); return; }
+
+      const obj = {
+        url, video_id,
+        title: document.getElementById('v-title').value.trim(),
+        date: document.getElementById('v-date').value,
+        game: document.getElementById('v-game').value,
+        description: document.getElementById('v-description').value.trim() || null
+      };
+
+      let error;
+      if(id){
+        ({ error } = await db.from('videos').update(obj).eq('id', id));
+      } else {
+        ({ error } = await db.from('videos').insert([obj]));
+      }
+      if(error){ alert('No se pudo guardar: ' + error.message); return; }
+      closeVideoModal();
+      await loadVideos();
+    });
+
+    document.getElementById('video-btn-cancel').addEventListener('click', closeVideoModal);
+    document.getElementById('video-modal-overlay').addEventListener('click', e => { if(e.target.id === 'video-modal-overlay') closeVideoModal(); });
 
     for(const k of IMAGE_KEYS){
       document.getElementById('file-' + k).addEventListener('change', async e => {
@@ -559,7 +728,7 @@
         window.location.href = 'login.html';
         return;
       }
-      await Promise.all([loadSiteContent(), loadPosts()]);
+      await Promise.all([loadSiteContent(), loadPosts(), loadVideos()]);
     }
     init();
   </script>

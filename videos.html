@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YouTube — Aqua Auditore</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:        #070C12;
+    --bg-soft:   #0E1B26;
+    --aqua:      #4FD9E0;
+    --aqua-dim:  #1C6E77;
+    --text:      #DCEFF1;
+    --text-soft: #7C9AA0;
+    --line:      rgba(79,217,224,0.14);
+
+    --g-destiny:  #E8A33D;
+    --g-mine:     #6FBF73;
+    --g-genshin:  #E3C567;
+    --g-zzz:      #E85D9E;
+    --g-hsr:      #9B7FE0;
+  }
+
+  *{ box-sizing: border-box; }
+  html{ scroll-behavior: smooth; }
+
+  body{
+    margin:0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3{
+    font-family: 'Sora', sans-serif;
+    font-weight: 600;
+    line-height: 1.2;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+
+  a{ color: inherit; text-decoration: none; }
+  img{ max-width: 100%; display:block; }
+
+  .wrap{ max-width: 980px; margin: 0 auto; padding: 0 28px; }
+
+  header{ padding: 30px 0 24px; border-bottom: 1px solid var(--line); }
+  .header-row{ display:flex; align-items:center; justify-content:space-between; gap: 16px; flex-wrap: wrap; }
+  .brand{ display:flex; align-items:center; gap: 14px; }
+  .brand img{ width: 40px; height: 40px; border-radius: 50%; box-shadow: 0 0 0 2px var(--bg), 0 0 14px rgba(79,217,224,0.35); }
+  .brand-name{ font-size: 1.25rem; font-weight: 700; }
+  .brand-name span{ color: var(--aqua); }
+
+  nav ul{ list-style:none; display:flex; gap: 22px; margin:0; padding:0; font-size: 0.92rem; }
+  nav a{ color: var(--text-soft); transition: color .15s ease; }
+  nav a:hover, nav a.active{ color: var(--aqua); }
+
+  .hero{ padding: 50px 0 30px; position: relative; overflow: hidden; }
+  .hero-glow{
+    position:absolute; top: -140px; right: -120px; width: 420px; height: 420px;
+    background: radial-gradient(circle, rgba(79,217,224,0.20), transparent 70%); pointer-events:none;
+  }
+  .hero-inner{ position:relative; }
+  .hero p.kicker{ color: var(--aqua); font-size: 0.98rem; margin: 0 0 14px; }
+  .hero h1{ font-size: clamp(1.8rem, 4vw, 2.6rem); max-width: 18ch; }
+  .hero .lede{ margin-top: 16px; max-width: 56ch; color: var(--text-soft); font-size: 1.02rem; white-space: pre-line; }
+
+  /* Filtros por juego */
+  .filters{ display:flex; flex-wrap:wrap; gap: 10px; margin-top: 26px; }
+  .pill{
+    display:flex; align-items:center; gap: 8px; padding: 7px 14px; border: 1px solid var(--line);
+    border-radius: 999px; font-size: 0.85rem; color: var(--text-soft); background: transparent;
+    cursor:pointer; font-family:'Inter', sans-serif; transition: all .15s ease;
+  }
+  .pill:hover{ border-color: var(--aqua); color: var(--text); }
+  .pill.active{ border-color: var(--aqua); color: var(--aqua); background: rgba(79,217,224,0.08); }
+  .dot{ width: 8px; height: 8px; border-radius: 50%; flex-shrink:0; }
+
+  .section{ padding: 30px 0 60px; }
+
+  /* Cuadrícula de videos */
+  .video-grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 26px; }
+  .video-card{ background: var(--bg-soft); border: 1px solid var(--line); border-radius: 10px; overflow:hidden; display:flex; flex-direction:column; }
+  .thumb{ position:relative; width:100%; padding-top:56.25%; background:#000; cursor:pointer; overflow:hidden; }
+  .thumb img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transition: transform .25s ease, opacity .25s ease; }
+  .thumb:hover img{ transform: scale(1.04); opacity: .85; }
+  .thumb iframe{ position:absolute; inset:0; width:100%; height:100%; border:0; }
+  .play{
+    position:absolute; left:50%; top:50%; transform: translate(-50%,-50%);
+    width: 56px; height: 56px; border-radius: 50%; background: rgba(7,12,18,0.72);
+    border: 1px solid rgba(79,217,224,0.5); display:flex; align-items:center; justify-content:center;
+    transition: all .15s ease; pointer-events:none;
+  }
+  .play::after{ content:''; border-left: 18px solid var(--aqua); border-top: 11px solid transparent; border-bottom: 11px solid transparent; margin-left: 4px; }
+  .thumb:hover .play{ background: rgba(79,217,224,0.2); transform: translate(-50%,-50%) scale(1.06); }
+  .video-body{ padding: 16px 18px 18px; display:flex; flex-direction:column; gap: 8px; flex:1; }
+  .video-body h3{ font-size: 1.05rem; }
+  .video-meta{ display:flex; align-items:center; justify-content:space-between; gap: 10px; font-size: 0.8rem; color: var(--text-soft); }
+  .tag{ display:inline-flex; align-items:center; gap: 7px; }
+  .video-body p{ color: var(--text-soft); margin: 4px 0 0; font-size: 0.9rem; white-space: pre-line; }
+  .helper-note{ color: var(--text-soft); }
+
+  footer{ padding: 40px 0 60px; color: var(--text-soft); font-size: 0.88rem; border-top: 1px solid var(--line); }
+  footer .wrap{ display:flex; justify-content:space-between; flex-wrap: wrap; gap:12px; }
+  footer .social{ display:flex; gap:18px; align-items:center; }
+  footer .social a:hover{ color: var(--aqua); }
+
+  @media (max-width: 620px){
+    nav ul{ gap: 14px; font-size: 0.85rem; }
+    .hero-glow{ width: 280px; height: 280px; top: -100px; right: -100px; }
+    .video-grid{ grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+  <header>
+    <div class="wrap header-row">
+      <a class="brand" href="index.html">
+        <img id="brand-logo" src="logo.jpg" alt="Emblema Aqua Auditore">
+        <div class="brand-name">Aqua <span>Auditore</span></div>
+      </a>
+      <nav>
+        <ul>
+          <li><a href="index.html#inicio">Inicio</a></li>
+          <li><a href="index.html#diarios">Diarios de juego</a></li>
+          <li><a href="index.html#pensamientos">Pensamientos</a></li>
+          <li><a href="videos.html" class="active">YouTube</a></li>
+          <li><a href="index.html#sobre-mi">Sobre mí</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="hero-glow"></div>
+    <div class="wrap hero-inner">
+      <p class="kicker" id="videos-kicker">Canal de YouTube</p>
+      <h1 id="videos-title">Mis videos</h1>
+      <p class="lede" id="videos-lede">Gameplays, momentos y todo lo que voy grabando mientras juego.</p>
+      <div class="filters" id="filters">
+        <button class="pill active" data-game="all">Todos</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="video-grid" id="video-grid"><p class="helper-note">Cargando...</p></div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap">
+      <span>© 2026 Aqua Auditore</span>
+      <div class="social">
+        <a href="#" id="link-twitch" target="_blank" rel="noopener">Twitch</a>
+        <a href="#" id="link-discord" target="_blank" rel="noopener">Discord</a>
+        <a href="#" id="link-x" target="_blank" rel="noopener">X</a>
+        <a href="login.html">Iniciar sesión</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = 'https://dolhldpxkkkyqfqkerbg.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRvbGhsZHB4a2treXFmcWtlcmJnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwODE4ODQsImV4cCI6MjEwNDY1Nzg4NH0.kqVg2n8T1p2smpck1uJLQLW07V5s71pidn4SJGaZbSk';
+    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const GAMES = {
+      destiny:   {label:'Destiny 2',          color:'var(--g-destiny)'},
+      minecraft: {label:'Minecraft',          color:'var(--g-mine)'},
+      genshin:   {label:'Genshin Impact',     color:'var(--g-genshin)'},
+      zzz:       {label:'Zenless Zone Zero',  color:'var(--g-zzz)'},
+      hsr:       {label:'Honkai Star Rail',   color:'var(--g-hsr)'}
+    };
+    const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+    let videos = [];
+    let activeGame = 'all';
+
+    function escapeHtml(str){
+      const div = document.createElement('div');
+      div.textContent = str || '';
+      return div.innerHTML;
+    }
+
+    function formatDate(date){
+      if(!date) return '';
+      const [y,m,d] = date.split('-');
+      return `${d} ${MONTHS[parseInt(m,10)-1] || ''} ${y}`;
+    }
+
+    function videoCardHtml(v){
+      const g = GAMES[v.game] || {label:v.game || '', color:'var(--aqua)'};
+      return `
+      <article class="video-card">
+        <div class="thumb" data-id="${v.video_id}" title="Reproducir">
+          <img src="https://i.ytimg.com/vi/${v.video_id}/hqdefault.jpg" alt="" loading="lazy">
+          <div class="play"></div>
+        </div>
+        <div class="video-body">
+          <h3>${escapeHtml(v.title)}</h3>
+          <div class="video-meta">
+            <span class="tag"><span class="dot" style="background:${g.color}"></span>${g.label}</span>
+            <span>${formatDate(v.date)}</span>
+          </div>
+          ${v.description ? `<p>${escapeHtml(v.description)}</p>` : ''}
+        </div>
+      </article>`;
+    }
+
+    function render(){
+      const list = activeGame === 'all' ? videos : videos.filter(v => v.game === activeGame);
+      document.getElementById('video-grid').innerHTML =
+        list.map(videoCardHtml).join('') || '<p class="helper-note">Aún no hay videos.</p>';
+    }
+
+    function renderFilters(){
+      const present = [...new Set(videos.map(v => v.game).filter(Boolean))];
+      const el = document.getElementById('filters');
+      el.innerHTML = `<button class="pill active" data-game="all">Todos</button>` +
+        present.map(k => {
+          const g = GAMES[k] || {label:k, color:'var(--aqua)'};
+          return `<button class="pill" data-game="${k}"><span class="dot" style="background:${g.color}"></span>${g.label}</button>`;
+        }).join('');
+    }
+
+    // Al pulsar la miniatura se sustituye por el reproductor de YouTube.
+    document.getElementById('video-grid').addEventListener('click', e => {
+      const thumb = e.target.closest('.thumb');
+      if(!thumb || thumb.querySelector('iframe')) return;
+      const id = thumb.dataset.id;
+      thumb.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`;
+    });
+
+    document.getElementById('filters').addEventListener('click', e => {
+      const btn = e.target.closest('.pill');
+      if(!btn) return;
+      activeGame = btn.dataset.game;
+      document.querySelectorAll('#filters .pill').forEach(p => p.classList.toggle('active', p === btn));
+      render();
+    });
+
+    async function loadVideos(){
+      const { data, error } = await db.from('videos').select('*').order('date', {ascending:false});
+      if(error){
+        console.error(error);
+        document.getElementById('video-grid').innerHTML = '<p class="helper-note">No se pudieron cargar los videos.</p>';
+        return;
+      }
+      videos = data;
+      renderFilters();
+      render();
+    }
+
+    // Textos de la cabecera, logo y redes (editables desde el panel).
+    const TEXT_FIELDS  = { videos_kicker:'videos-kicker', videos_title:'videos-title', videos_lede:'videos-lede' };
+    const IMAGE_FIELDS = { logo_image:'brand-logo' };
+    const LINK_FIELDS  = { link_twitch:'link-twitch', link_discord:'link-discord', link_x:'link-x' };
+
+    async function loadSiteContent(){
+      const { data, error } = await db.from('site_content').select('key,value');
+      if(error){ console.error(error); return; }
+      for(const row of data){
+        if(!row.value) continue;
+        if(TEXT_FIELDS[row.key])       document.getElementById(TEXT_FIELDS[row.key]).textContent = row.value;
+        else if(IMAGE_FIELDS[row.key]) document.getElementById(IMAGE_FIELDS[row.key]).src = row.value;
+        else if(LINK_FIELDS[row.key])  document.getElementById(LINK_FIELDS[row.key]).href = row.value;
+      }
+    }
+
+    loadSiteContent();
+    loadVideos();
+  </script>
+
+</body>
+</html>
