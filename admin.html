@@ -138,6 +138,32 @@
   .panel.notice{ border-color: rgba(232,163,61,0.45); font-size: 0.9rem; color: var(--text-soft); }
   .panel.notice strong{ color: var(--text); }
 
+  /* Pestañas del panel */
+  .tabs-bar{ position: sticky; top: 0; z-index: 20; background: rgba(7,12,18,0.92); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+  .tabs{ display:flex; align-items:center; gap: 6px; padding-top: 10px; padding-bottom: 10px; flex-wrap: wrap; }
+  .tab{ background:none; border:1px solid transparent; color: var(--text-soft); font-family:'Inter', sans-serif; font-size: 0.95rem; font-weight: 600; padding: 8px 16px; border-radius: 6px; cursor:pointer; transition: all .15s ease; }
+  .tab:hover{ color: var(--text); }
+  .tab.active{ color: var(--aqua); background: rgba(79,217,224,0.08); border-color: rgba(79,217,224,0.35); }
+  .subnav{ display:flex; gap: 4px; flex-wrap: wrap; margin-left: auto; }
+  .subnav a{ font-size: 0.8rem; color: var(--text-soft); padding: 5px 10px; border-radius: 999px; border: 1px solid transparent; }
+  .subnav a:hover{ color: var(--aqua); border-color: var(--line); }
+  .tab-panel{ display:none; }
+  .tab-panel.active{ display:block; }
+  .panel-title{ font-size: 1rem; margin-bottom: 6px; }
+
+  /* Gestor de imágenes del carrusel */
+  .hero-grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-bottom: 14px; }
+  .hero-item{ position:relative; border-radius: 8px; overflow:hidden; border: 1px solid var(--line); background:#000; }
+  .hero-item img{ width:100%; aspect-ratio: 16/9; object-fit: cover; display:block; }
+  .hero-item .tools{ position:absolute; inset:auto 0 0 0; display:flex; justify-content:space-between; padding: 6px; background: linear-gradient(transparent, rgba(7,12,18,0.85)); }
+  .hero-item .tools button{ background: rgba(14,27,38,0.85); border: 1px solid var(--line); color: var(--text); width: 28px; height: 28px; border-radius: 6px; cursor:pointer; font-size: 0.85rem; }
+  .hero-item .tools button:hover{ border-color: var(--aqua); color: var(--aqua); }
+  .hero-item .tools button.del:hover{ border-color: #E88A8A; color: #E88A8A; }
+  .hero-item .num{ position:absolute; top: 6px; left: 6px; font-size: 0.72rem; background: rgba(7,12,18,0.8); padding: 2px 7px; border-radius: 999px; color: var(--text-soft); }
+  .hero-item.pending .num{ color: var(--aqua); }
+  .hero-add{ display:flex; align-items:center; gap: 14px; margin-bottom: 8px; }
+  .hero-add label{ display:inline-block; }
+
   /* Lista de videos en el panel */
   .video-row{ display:grid; grid-template-columns: 150px 1fr; gap: 18px; padding: 18px 0; border-bottom: 1px solid var(--line); align-items:start; }
   .video-row:last-child{ border-bottom:none; }
@@ -174,6 +200,75 @@
     </div>
   </header>
 
+  <div class="tabs-bar">
+    <div class="wrap tabs">
+      <button class="tab active" data-tab="publicar">Publicar</button>
+      <button class="tab" data-tab="ajustes">Ajustes de la página</button>
+      <nav class="subnav" id="subnav"></nav>
+    </div>
+  </div>
+
+  <div class="tab-panel active" id="tab-publicar">
+  <section class="section" id="diarios">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Diarios de juego</h2>
+        <button class="btn primary" onclick="openModal('diario')">+ Nueva entrada</button>
+      </div>
+      <div class="panel notice" id="migration-notice" style="display:none;">
+        <strong>Tienes <span id="migration-count">0</span> fotos guardadas en formato antiguo</strong> (dentro de la base de datos).
+        Pásalas a Supabase Storage para que el sitio cargue más rápido. Solo hay que hacerlo una vez.
+        <div class="panel-actions" style="margin-top:12px;">
+          <span class="save-status" id="migration-status"></span>
+          <button type="button" class="btn primary" id="migrate-btn">Migrar fotos a Storage</button>
+        </div>
+      </div>
+      <div id="diarios-list"><p class="helper-note">Cargando...</p></div>
+    </div>
+  </section>
+
+  <section class="section" id="pensamientos">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Pensamientos</h2>
+        <button class="btn primary" onclick="openModal('pensamiento')">+ Nuevo pensamiento</button>
+      </div>
+      <div id="pensamientos-list"><p class="helper-note">Cargando...</p></div>
+    </div>
+  </section>
+
+  <section class="section" id="ia">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Desarrollo IA</h2>
+        <button class="btn primary" onclick="openModal('ia')">+ Nueva publicación</button>
+      </div>
+      <div id="ia-list"><p class="helper-note">Cargando...</p></div>
+    </div>
+  </section>
+
+  <section class="section" id="juego">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Videojuego en Desarrollo</h2>
+        <button class="btn primary" onclick="openModal('juego')">+ Nuevo avance</button>
+      </div>
+      <div id="juego-list"><p class="helper-note">Cargando...</p></div>
+    </div>
+  </section>
+
+  <section class="section" id="videos">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>YouTube</h2>
+        <button class="btn primary" onclick="openVideoModal()">+ Nuevo video</button>
+      </div>
+      <div id="videos-list"><p class="helper-note">Cargando...</p></div>
+    </div>
+  </section>
+  </div>
+
+  <div class="tab-panel" id="tab-ajustes">
   <section class="section" id="inicio">
     <div class="wrap">
       <div class="section-head">
@@ -188,6 +283,20 @@
           <button type="submit" class="btn primary">Guardar Inicio</button>
         </div>
       </form>
+      <div class="panel" id="hero-images-panel">
+        <h3 class="panel-title">Imágenes del Inicio (carrusel)</h3>
+        <p class="helper-note" style="margin:0 0 14px; font-size:0.88rem;">Se muestran a la derecha del texto de bienvenida y van cambiando solas. Máximo <strong>10</strong>. Se recortan a 16:9.</p>
+        <div class="hero-grid" id="hero-grid"></div>
+        <div class="hero-add">
+          <label class="btn ghost" for="hero-files">+ Añadir imágenes</label>
+          <input type="file" id="hero-files" accept="image/*" multiple style="display:none">
+          <span class="helper-note" id="hero-count">0 / 10</span>
+        </div>
+        <div class="panel-actions">
+          <span class="save-status" id="status-hero-images"></span>
+          <button type="button" class="btn primary" id="save-hero-images">Guardar imágenes</button>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -240,39 +349,10 @@
     </div>
   </section>
 
-  <section class="section" id="diarios">
+  <section class="section" id="ajustes-ia">
     <div class="wrap">
       <div class="section-head">
-        <h2>Diarios de juego</h2>
-        <button class="btn primary" onclick="openModal('diario')">+ Nueva entrada</button>
-      </div>
-      <div class="panel notice" id="migration-notice" style="display:none;">
-        <strong>Tienes <span id="migration-count">0</span> fotos guardadas en formato antiguo</strong> (dentro de la base de datos).
-        Pásalas a Supabase Storage para que el sitio cargue más rápido. Solo hay que hacerlo una vez.
-        <div class="panel-actions" style="margin-top:12px;">
-          <span class="save-status" id="migration-status"></span>
-          <button type="button" class="btn primary" id="migrate-btn">Migrar fotos a Storage</button>
-        </div>
-      </div>
-      <div id="diarios-list"><p class="helper-note">Cargando...</p></div>
-    </div>
-  </section>
-
-  <section class="section" id="pensamientos">
-    <div class="wrap">
-      <div class="section-head">
-        <h2>Pensamientos</h2>
-        <button class="btn primary" onclick="openModal('pensamiento')">+ Nuevo pensamiento</button>
-      </div>
-      <div id="pensamientos-list"><p class="helper-note">Cargando...</p></div>
-    </div>
-  </section>
-
-  <section class="section" id="ia">
-    <div class="wrap">
-      <div class="section-head">
-        <h2>Desarrollo IA</h2>
-        <button class="btn primary" onclick="openModal('ia')">+ Nueva publicación</button>
+        <h2>Cabecera de Desarrollo IA</h2>
       </div>
       <form class="panel" id="form-ia-head">
         <label>Frase corta (arriba del título)<input type="text" id="c-ia_kicker" placeholder="Desarrollo IA"></label>
@@ -283,15 +363,13 @@
           <button type="submit" class="btn primary">Guardar cabecera</button>
         </div>
       </form>
-      <div id="ia-list"><p class="helper-note">Cargando...</p></div>
     </div>
   </section>
 
-  <section class="section" id="juego">
+  <section class="section" id="ajustes-juego">
     <div class="wrap">
       <div class="section-head">
-        <h2>Videojuego en Desarrollo</h2>
-        <button class="btn primary" onclick="openModal('juego')">+ Nuevo avance</button>
+        <h2>Ficha del videojuego</h2>
       </div>
       <form class="panel" id="form-juego">
         <div class="img-preview">
@@ -318,15 +396,13 @@
           <button type="submit" class="btn primary">Guardar ficha del juego</button>
         </div>
       </form>
-      <div id="juego-list"><p class="helper-note">Cargando...</p></div>
     </div>
   </section>
 
-  <section class="section" id="videos">
+  <section class="section" id="ajustes-videos">
     <div class="wrap">
       <div class="section-head">
-        <h2>YouTube</h2>
-        <button class="btn primary" onclick="openVideoModal()">+ Nuevo video</button>
+        <h2>Cabecera de YouTube</h2>
       </div>
       <form class="panel" id="form-videos-head">
         <label>Frase corta (arriba del título)<input type="text" id="c-videos_kicker" placeholder="Canal de YouTube"></label>
@@ -337,9 +413,10 @@
           <button type="submit" class="btn primary">Guardar cabecera</button>
         </div>
       </form>
-      <div id="videos-list"><p class="helper-note">Cargando...</p></div>
     </div>
   </section>
+
+  </div>
 
   <div style="height:40px;"></div>
 
@@ -534,6 +611,22 @@
       renderMigrationNotice();
     }
 
+    /* ---------- Pestañas: Publicar / Ajustes de la página ---------- */
+    const SUBNAV = {
+      publicar: [['#diarios','Diarios'],['#pensamientos','Pensamientos'],['#ia','Desarrollo IA'],['#juego','Videojuego'],['#videos','YouTube']],
+      ajustes:  [['#inicio','Inicio'],['#sobre-mi','Sobre mí'],['#marca','Logo y redes'],['#ajustes-ia','Desarrollo IA'],['#ajustes-juego','Videojuego'],['#ajustes-videos','YouTube']]
+    };
+    function showTab(name){
+      document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + name));
+      document.getElementById('subnav').innerHTML = SUBNAV[name].map(([h,l]) => `<a href="${h}">${l}</a>`).join('');
+      try { localStorage.setItem('admin-tab', name); } catch(e){}
+    }
+    document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => { showTab(t.dataset.tab); window.scrollTo({top:0}); }));
+    let initialTab = 'publicar';
+    try { initialTab = localStorage.getItem('admin-tab') || 'publicar'; } catch(e){}
+    showTab(initialTab);
+
     /* ---------- Secciones fijas: Inicio, Sobre mí, logo y redes ---------- */
     // Guardado como pares clave/valor en la tabla `site_content`.
     // Si una clave no existe (o su valor es null) index.html muestra el texto/imagen original del HTML.
@@ -565,6 +658,7 @@
         pendingImages[k] = undefined;
         document.getElementById('prev-' + k).src = siteContent[k] || (k === 'juego_portada' ? EMPTY_IMAGE : DEFAULT_IMAGE);
       }
+      loadHeroImages();
       renderMigrationNotice();
     }
 
@@ -739,6 +833,87 @@
         document.getElementById('prev-' + k).src = k === 'juego_portada' ? EMPTY_IMAGE : DEFAULT_IMAGE;
       });
     }
+
+    /* ---------- Carrusel del Inicio: hasta 10 imágenes (clave hero_images, lista JSON de URLs) ---------- */
+    const HERO_MAX = 10;
+    let heroImages = [];   // [{ url, file }]  file = pendiente de subir
+
+    function loadHeroImages(){
+      let urls = [];
+      try { urls = JSON.parse(siteContent.hero_images || '[]'); } catch(e){ urls = []; }
+      heroImages = (Array.isArray(urls) ? urls : []).slice(0, HERO_MAX).map(url => ({ url }));
+      renderHeroImages();
+    }
+
+    function renderHeroImages(){
+      const grid = document.getElementById('hero-grid');
+      grid.innerHTML = heroImages.map((it, i) => `
+        <div class="hero-item ${it.file ? 'pending' : ''}">
+          <img src="${it.url}" alt="">
+          <span class="num">${i + 1}${it.file ? ' · nueva' : ''}</span>
+          <div class="tools">
+            <span>
+              <button type="button" title="Mover a la izquierda" onclick="moveHeroImage(${i}, -1)" ${i === 0 ? 'disabled' : ''}>◀</button>
+              <button type="button" title="Mover a la derecha" onclick="moveHeroImage(${i}, 1)" ${i === heroImages.length - 1 ? 'disabled' : ''}>▶</button>
+            </span>
+            <button type="button" class="del" title="Quitar" onclick="removeHeroImage(${i})">✕</button>
+          </div>
+        </div>`).join('') || '<p class="helper-note" style="grid-column:1/-1; margin:0;">Todavía no hay imágenes. El Inicio se ve igual que siempre hasta que añadas alguna.</p>';
+      document.getElementById('hero-count').textContent = `${heroImages.length} / ${HERO_MAX}`;
+    }
+
+    function moveHeroImage(i, dir){
+      const j = i + dir;
+      if(j < 0 || j >= heroImages.length) return;
+      [heroImages[i], heroImages[j]] = [heroImages[j], heroImages[i]];
+      renderHeroImages();
+    }
+    function removeHeroImage(i){
+      heroImages.splice(i, 1);
+      renderHeroImages();
+    }
+
+    document.getElementById('hero-files').addEventListener('change', e => {
+      const files = Array.from(e.target.files || []);
+      const room = HERO_MAX - heroImages.length;
+      if(files.length > room){
+        alert(room > 0
+          ? `Solo caben ${room} imágenes más (máximo ${HERO_MAX}). Se añadirán las primeras ${room}.`
+          : `Ya tienes ${HERO_MAX} imágenes, que es el máximo. Quita alguna para añadir otra.`);
+      }
+      for(const file of files.slice(0, Math.max(0, room))){
+        heroImages.push({ url: URL.createObjectURL(file), file });
+      }
+      e.target.value = '';
+      renderHeroImages();
+    });
+
+    document.getElementById('save-hero-images').addEventListener('click', async () => {
+      const status = document.getElementById('status-hero-images');
+      const btn = document.getElementById('save-hero-images');
+      btn.disabled = true;
+      try {
+        const urls = [];
+        for(let i = 0; i < heroImages.length; i++){
+          const it = heroImages[i];
+          if(it.file){
+            status.textContent = `Subiendo ${i + 1} de ${heroImages.length}...`;
+            it.url = await uploadImage(it.file, 'inicio', 1600);
+            it.file = null;
+          }
+          urls.push(it.url);
+        }
+        status.textContent = 'Guardando...';
+        const { error } = await db.from('site_content').upsert({ key: 'hero_images', value: urls.length ? JSON.stringify(urls) : null }, { onConflict: 'key' });
+        if(error) throw error;
+        status.textContent = 'Guardado ✓';
+        setTimeout(() => { if(status.textContent === 'Guardado ✓') status.textContent = ''; }, 2500);
+        await loadSiteContent();
+      } catch(err){
+        status.textContent = 'Error: ' + err.message;
+      }
+      btn.disabled = false;
+    });
 
     /* ---------- Imágenes: se reducen en el navegador y se suben a Supabase Storage ---------- */
     const BUCKET = 'imagenes';

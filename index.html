@@ -87,6 +87,23 @@
   .hero .lede{ margin-top: 20px; max-width: 56ch; color: var(--text-soft); font-size: 1.08rem; white-space: pre-line; }
 
   .game-pills{ display:flex; flex-wrap:wrap; gap: 10px; margin-top: 28px; }
+
+  /* Carrusel de imágenes del Inicio (solo aparece si hay imágenes) */
+  .hero-inner.has-slides{ display:grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 44px; align-items:center; }
+  .hero-slides{
+    position:relative; aspect-ratio: 16/9; border-radius: 12px; overflow:hidden; background:#000;
+    border: 1px solid var(--line); box-shadow: 0 0 0 1px rgba(7,12,18,0.6), 0 24px 60px rgba(0,0,0,0.45), 0 0 40px rgba(79,217,224,0.12);
+  }
+  .hero-slides[hidden]{ display:none; }
+  .slides-track{ display:flex; height:100%; transition: transform .7s cubic-bezier(.4,0,.2,1); will-change: transform; }
+  .slides-track img{ flex: 0 0 100%; width:100%; height:100%; object-fit: cover; }
+  .slides-dots{ position:absolute; left:0; right:0; bottom: 10px; display:flex; justify-content:center; gap: 6px; }
+  .slides-dots button{ width: 7px; height: 7px; border-radius: 50%; border:0; padding:0; background: rgba(220,239,241,0.45); cursor:pointer; transition: all .2s ease; }
+  .slides-dots button.active{ background: var(--aqua); width: 18px; border-radius: 999px; }
+  @media (max-width: 860px){
+    .hero-inner.has-slides{ grid-template-columns: 1fr; gap: 28px; }
+    .hero-slides{ max-width: 520px; }
+  }
   .pill{ display:flex; align-items:center; gap: 8px; padding: 7px 14px; border: 1px solid var(--line); border-radius: 999px; font-size: 0.85rem; color: var(--text-soft); }
   .dot{ width: 8px; height: 8px; border-radius: 50%; flex-shrink:0; }
 
@@ -158,7 +175,8 @@
 
   <section class="hero" id="inicio">
     <div class="hero-glow"></div>
-    <div class="wrap hero-inner">
+    <div class="wrap hero-inner" id="hero-inner">
+      <div class="hero-text">
       <p class="kicker" id="hero-kicker">Diario de un jugador</p>
       <h1 id="hero-title">Lo que juego, lo que construyo y lo que pienso mientras tanto.</h1>
       <p class="lede" id="hero-lede">Este es mi rincón para llevar registro de mis partidas, mis avances y también las ideas sueltas que se me ocurren mientras juego. Un poco de Destiny 2, un poco de Teyvat, y todo lo demás en el medio.</p>
@@ -168,6 +186,11 @@
         <span class="pill"><span class="dot" style="background:var(--g-genshin)"></span>Genshin Impact</span>
         <span class="pill"><span class="dot" style="background:var(--g-zzz)"></span>Zenless Zone Zero</span>
         <span class="pill"><span class="dot" style="background:var(--g-hsr)"></span>Honkai Star Rail</span>
+      </div>
+      </div>
+      <div class="hero-slides" id="hero-slides" hidden>
+        <div class="slides-track" id="slides-track"></div>
+        <div class="slides-dots" id="slides-dots"></div>
       </div>
     </div>
   </section>
@@ -326,8 +349,38 @@
           document.getElementById(IMAGE_FIELDS[row.key]).src = row.value;
         } else if(LINK_FIELDS[row.key]){
           document.getElementById(LINK_FIELDS[row.key]).href = row.value;
+        } else if(row.key === 'hero_images'){
+          let urls = [];
+          try { urls = JSON.parse(row.value); } catch(e){}
+          if(Array.isArray(urls) && urls.length) startHeroSlides(urls.slice(0, 10));
         }
       }
+    }
+
+    // Carrusel del Inicio: cambia de imagen sola cada 4 s, se pausa al pasar el ratón.
+    function startHeroSlides(urls){
+      const box = document.getElementById('hero-slides');
+      const track = document.getElementById('slides-track');
+      const dots = document.getElementById('slides-dots');
+      track.innerHTML = urls.map((u, i) => `<img src="${u}" alt="" ${i ? 'loading="lazy"' : ''}>`).join('');
+      dots.innerHTML = urls.length > 1 ? urls.map((_, i) => `<button type="button" aria-label="Imagen ${i + 1}"></button>`).join('') : '';
+      box.hidden = false;
+      document.getElementById('hero-inner').classList.add('has-slides');
+      if(urls.length < 2) return;
+
+      let i = 0, timer = null;
+      const go = n => {
+        i = (n + urls.length) % urls.length;
+        track.style.transform = `translateX(-${i * 100}%)`;
+        dots.querySelectorAll('button').forEach((d, k) => d.classList.toggle('active', k === i));
+      };
+      const play = () => { stop(); timer = setInterval(() => go(i + 1), 4000); };
+      const stop = () => { if(timer) clearInterval(timer); timer = null; };
+      dots.querySelectorAll('button').forEach((d, k) => d.addEventListener('click', () => { go(k); play(); }));
+      box.addEventListener('mouseenter', stop);
+      box.addEventListener('mouseleave', play);
+      go(0);
+      if(!window.matchMedia('(prefers-reduced-motion: reduce)').matches) play();
     }
 
     loadSiteContent();
