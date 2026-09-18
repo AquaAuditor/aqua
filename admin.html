@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Panel de administración — Aqua Auditore</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -96,6 +98,8 @@
   .admin-actions{ display:flex; gap:14px; margin-top:12px; }
   .admin-actions button{ background:none; border:none; color: var(--text-soft); font-size: 0.78rem; cursor:pointer; padding:0; text-decoration: underline; text-underline-offset:3px; font-family:'Inter'; }
   .admin-actions button:hover{ color: var(--aqua); }
+  .admin-actions a{ color: var(--text-soft); font-size: 0.78rem; text-decoration: underline; text-underline-offset:3px; }
+  .admin-actions a:hover{ color: var(--aqua); }
 
   .modal-overlay{ position:fixed; inset:0; background: rgba(3,7,11,0.72); display:none; align-items:center; justify-content:center; padding:20px; z-index:50; }
   .modal-overlay.open{ display:flex; }
@@ -128,6 +132,11 @@
   .img-preview img{ width: 72px; height: 72px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px var(--bg), 0 0 14px rgba(79,217,224,0.35); }
   .img-preview button{ background:none; border:none; color: var(--text-soft); font-size: 0.78rem; cursor:pointer; padding:0; text-decoration: underline; text-underline-offset:3px; font-family:'Inter'; }
   .img-preview button:hover{ color: var(--aqua); }
+
+  .link-btn{ background:none; border:none; color: var(--text-soft); font-size: 0.78rem; cursor:pointer; padding:0; text-decoration: underline; text-underline-offset:3px; font-family:'Inter'; }
+  .link-btn:hover{ color: var(--aqua); }
+  .panel.notice{ border-color: rgba(232,163,61,0.45); font-size: 0.9rem; color: var(--text-soft); }
+  .panel.notice strong{ color: var(--text); }
 
   /* Lista de videos en el panel */
   .video-row{ display:grid; grid-template-columns: 150px 1fr; gap: 18px; padding: 18px 0; border-bottom: 1px solid var(--line); align-items:start; }
@@ -237,6 +246,14 @@
         <h2>Diarios de juego</h2>
         <button class="btn primary" onclick="openModal('diario')">+ Nueva entrada</button>
       </div>
+      <div class="panel notice" id="migration-notice" style="display:none;">
+        <strong>Tienes <span id="migration-count">0</span> fotos guardadas en formato antiguo</strong> (dentro de la base de datos).
+        Pásalas a Supabase Storage para que el sitio cargue más rápido. Solo hay que hacerlo una vez.
+        <div class="panel-actions" style="margin-top:12px;">
+          <span class="save-status" id="migration-status"></span>
+          <button type="button" class="btn primary" id="migrate-btn">Migrar fotos a Storage</button>
+        </div>
+      </div>
       <div id="diarios-list"><p class="helper-note">Cargando...</p></div>
     </div>
   </section>
@@ -320,7 +337,8 @@
         </div>
         <div id="f-media-wrap">
           <label>Imagen (opcional)<input type="file" id="f-image" accept="image/*"></label>
-          <img id="f-image-preview" style="display:none; max-width:160px; border-radius:8px; margin-bottom:16px;">
+          <img id="f-image-preview" style="display:none; max-width:160px; border-radius:8px; margin-bottom:6px;">
+          <button type="button" id="f-image-remove" class="link-btn" style="margin-bottom:16px;">Quitar imagen</button>
           <label>Video de YouTube (opcional)<input type="text" id="f-video" placeholder="Pega el link del video"></label>
         </div>
         <label>Texto<textarea id="f-body" rows="5" required></textarea></label>
@@ -349,7 +367,8 @@
     const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
     let posts = [];
-    let currentImageData = null;
+    let currentImageData = null;   // URL de la imagen que ya tiene la entrada
+    let pendingPostImage = null;   // archivo nuevo elegido, pendiente de subir
 
     function escapeHtml(str){
       const div = document.createElement('div');
@@ -373,10 +392,24 @@
       return null;
     }
 
+    // Enlace público de una entrada (mismo formato que usa index.html y el generador de vistas previas).
+    const SITE_BASE = location.href.replace(/[^/]*$/, '');
+    function postLink(id){ return `${SITE_BASE}p/${id}.html`; }
+
+    async function copyPostLink(id, btn){
+      try {
+        await navigator.clipboard.writeText(postLink(id));
+        const prev = btn.textContent; btn.textContent = 'Copiado ✓';
+        setTimeout(() => btn.textContent = prev, 1800);
+      } catch(e){ prompt('Copia el enlace:', postLink(id)); }
+    }
+
     function adminButtonsHtml(section, id){
       return `<div class="admin-actions">
         <button onclick="openModal('${section}','${id}')">Editar</button>
         <button onclick="deletePost('${id}')">Eliminar</button>
+        <button onclick="copyPostLink('${id}', this)">Copiar enlace</button>
+        <a href="post.html?id=${id}" target="_blank" rel="noopener">Ver ↗</a>
       </div>`;
     }
 
@@ -423,6 +456,7 @@
       if(error){ console.error(error); return; }
       posts = data;
       renderAll();
+      renderMigrationNotice();
     }
 
     /* ---------- Secciones fijas: Inicio, Sobre mí, logo y redes ---------- */
@@ -453,18 +487,24 @@
         pendingImages[k] = undefined;
         document.getElementById('prev-' + k).src = siteContent[k] || DEFAULT_IMAGE;
       }
+      renderMigrationNotice();
     }
 
     async function saveSiteContent(keys, statusId){
       const status = document.getElementById(statusId);
       status.textContent = 'Guardando...';
-      const rows = keys.map(k => {
-        if(IMAGE_KEYS.includes(k)){
-          if(pendingImages[k] === undefined) return null;           // sin cambios
-          return { key: k, value: pendingImages[k] };                // null = volver a la original
+      const rows = [];
+      try {
+        for(const k of keys){
+          if(IMAGE_KEYS.includes(k)){
+            if(pendingImages[k] === undefined) continue;                       // sin cambios
+            const value = pendingImages[k] ? await uploadImage(pendingImages[k], 'sitio', 400) : null; // null = volver a la original
+            rows.push({ key: k, value });
+          } else {
+            rows.push({ key: k, value: document.getElementById('c-' + k).value.trim() || null });
+          }
         }
-        return { key: k, value: document.getElementById('c-' + k).value.trim() || null };
-      }).filter(Boolean);
+      } catch(err){ status.textContent = 'Error al subir la imagen: ' + err.message; return; }
 
       if(rows.length){
         const { error } = await db.from('site_content').upsert(rows, { onConflict: 'key' });
@@ -599,12 +639,11 @@
     document.getElementById('video-modal-overlay').addEventListener('click', e => { if(e.target.id === 'video-modal-overlay') closeVideoModal(); });
 
     for(const k of IMAGE_KEYS){
-      document.getElementById('file-' + k).addEventListener('change', async e => {
+      document.getElementById('file-' + k).addEventListener('change', e => {
         const file = e.target.files[0];
         if(!file) return;
-        const dataUrl = await resizeImage(file, 400, 0.85);
-        pendingImages[k] = dataUrl;
-        document.getElementById('prev-' + k).src = dataUrl;
+        pendingImages[k] = file;                      // se sube a Storage al pulsar Guardar
+        document.getElementById('prev-' + k).src = URL.createObjectURL(file);
       });
       document.getElementById('reset-' + k).addEventListener('click', () => {
         pendingImages[k] = null;
@@ -613,29 +652,99 @@
       });
     }
 
+    /* ---------- Imágenes: se reducen en el navegador y se suben a Supabase Storage ---------- */
+    const BUCKET = 'imagenes';
+
+    // Devuelve un Blob JPEG reducido a `maxWidth` como máximo.
     function resizeImage(file, maxWidth, quality){
       return new Promise((resolve, reject)=>{
-        const reader = new FileReader();
-        reader.onload = e => {
-          const img = new Image();
-          img.onload = () => {
-            let w = img.width, h = img.height;
-            if(w > maxWidth){ h = Math.round(h * (maxWidth / w)); w = maxWidth; }
-            const canvas = document.createElement('canvas');
-            canvas.width = w; canvas.height = h;
-            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-            resolve(canvas.toDataURL('image/jpeg', quality));
-          };
-          img.onerror = reject;
-          img.src = e.target.result;
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        img.onload = () => {
+          let w = img.width, h = img.height;
+          if(w > maxWidth){ h = Math.round(h * (maxWidth / w)); w = maxWidth; }
+          const canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          URL.revokeObjectURL(url);
+          canvas.toBlob(b => b ? resolve(b) : reject(new Error('No se pudo procesar la imagen')), 'image/jpeg', quality);
         };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
+        img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('El archivo no es una imagen válida')); };
+        img.src = url;
       });
     }
 
+    // Sube un File/Blob al bucket y devuelve su URL pública.
+    async function uploadImage(fileOrBlob, folder, maxWidth = 1200){
+      const blob = await resizeImage(fileOrBlob, maxWidth, 0.85);
+      const path = `${folder}/${crypto.randomUUID()}.jpg`;
+      const { error } = await db.storage.from(BUCKET).upload(path, blob, { contentType: 'image/jpeg' });
+      if(error) throw error;
+      return db.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+    }
+
+    // Convierte una imagen guardada como texto (data:image/...) en Blob para migrarla.
+    async function dataUrlToBlob(dataUrl){
+      return (await fetch(dataUrl)).blob();
+    }
+
+    /* ---------- Migración de fotos antiguas (guardadas dentro de la base de datos) ---------- */
+    function countLegacyImages(){
+      const inPosts = posts.filter(p => (p.image || '').startsWith('data:')).length;
+      const inSite  = IMAGE_KEYS.filter(k => (siteContent[k] || '').startsWith('data:')).length;
+      return inPosts + inSite;
+    }
+
+    function renderMigrationNotice(){
+      const n = countLegacyImages();
+      const box = document.getElementById('migration-notice');
+      if(!n){ box.style.display = 'none'; return; }
+      box.style.display = 'block';
+      document.getElementById('migration-count').textContent = n;
+    }
+
+    async function migrateLegacyImages(){
+      const btn = document.getElementById('migrate-btn');
+      const status = document.getElementById('migration-status');
+      btn.disabled = true;
+      let done = 0, failed = 0;
+      const total = countLegacyImages();
+      const tick = () => status.textContent = `Migrando ${done + failed}/${total}...`;
+      tick();
+
+      for(const p of posts){
+        if(!(p.image || '').startsWith('data:')) continue;
+        try {
+          const url = await uploadImage(await dataUrlToBlob(p.image), 'posts');
+          const { error } = await db.from('posts').update({ image: url }).eq('id', p.id);
+          if(error) throw error;
+          done++;
+        } catch(err){ console.error(err); failed++; }
+        tick();
+      }
+      for(const k of IMAGE_KEYS){
+        if(!(siteContent[k] || '').startsWith('data:')) continue;
+        try {
+          const url = await uploadImage(await dataUrlToBlob(siteContent[k]), 'sitio', 400);
+          const { error } = await db.from('site_content').upsert({ key: k, value: url }, { onConflict: 'key' });
+          if(error) throw error;
+          done++;
+        } catch(err){ console.error(err); failed++; }
+        tick();
+      }
+
+      status.textContent = failed
+        ? `Listo: ${done} migradas, ${failed} con error (revisa que exista el bucket "imagenes").`
+        : `Listo: ${done} fotos migradas ✓`;
+      btn.disabled = false;
+      await Promise.all([loadSiteContent(), loadPosts()]);
+      if(!failed) setTimeout(renderMigrationNotice, 4000);
+    }
+    document.getElementById('migrate-btn').addEventListener('click', migrateLegacyImages);
+
     function openModal(section, id){
       currentImageData = null;
+      pendingPostImage = null;
       const form = document.getElementById('post-form');
       form.reset();
       document.getElementById('f-image-preview').style.display = 'none';
@@ -678,14 +787,20 @@
       await loadPosts();
     }
 
-    document.getElementById('f-image').addEventListener('change', async (e) => {
+    document.getElementById('f-image').addEventListener('change', (e) => {
       const file = e.target.files[0];
       if(!file) return;
-      const dataUrl = await resizeImage(file, 1000, 0.82);
-      currentImageData = dataUrl;
+      pendingPostImage = file;                        // se sube a Storage al guardar
       const prev = document.getElementById('f-image-preview');
-      prev.src = dataUrl;
+      prev.src = URL.createObjectURL(file);
       prev.style.display = 'block';
+    });
+
+    document.getElementById('f-image-remove').addEventListener('click', () => {
+      pendingPostImage = null;
+      currentImageData = null;
+      document.getElementById('f-image').value = '';
+      document.getElementById('f-image-preview').style.display = 'none';
     });
 
     document.getElementById('post-form').addEventListener('submit', async (e) => {
@@ -700,7 +815,12 @@
       if(section === 'diario'){
         obj.game = document.getElementById('f-game').value;
         obj.video = document.getElementById('f-video').value.trim();
-        obj.image = currentImageData;
+        if(pendingPostImage){
+          try { obj.image = await uploadImage(pendingPostImage, 'posts'); }
+          catch(err){ alert('No se pudo subir la imagen: ' + err.message); return; }
+        } else {
+          obj.image = currentImageData;                 // la que ya tenía (o null si se quitó)
+        }
       }
 
       let error;

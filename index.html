@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Aqua Auditore</title>
+<meta name="description" content="Lo que juego, lo que construyo y lo que pienso mientras tanto. Destiny 2, Minecraft, Genshin Impact y más.">
+<link rel="icon" type="image/png" href="favicon.png">
+<meta property="og:site_name" content="Aqua Auditore">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Aqua Auditore — Diario de un jugador">
+<meta property="og:description" content="Lo que juego, lo que construyo y lo que pienso mientras tanto. Destiny 2, Minecraft, Genshin Impact y más.">
+<meta property="og:image" content="https://aquaauditor.github.io/aqua/og-logo.jpg">
+<meta name="twitter:card" content="summary">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -91,6 +99,7 @@
   .post .date{ font-size: 0.82rem; color: var(--text-soft); padding-top: 4px; }
   .post .date strong{ display:block; font-family:'Sora', sans-serif; font-size: 1.5rem; color: var(--aqua); font-weight: 600; }
   .post h3{ font-size: 1.22rem; margin-bottom: 8px; }
+  .post h3 a:hover, .thought h3 a:hover{ color: var(--aqua); }
   .post p{ color: var(--text-soft); margin: 10px 0 0; max-width: 60ch; white-space: pre-line; }
   .post .tag{ display:inline-flex; align-items:center; gap: 7px; margin-top: 12px; font-size: 0.8rem; color: var(--text-soft); }
 
@@ -252,8 +261,8 @@
       <article class="post">
         <div class="date"><strong>${d}</strong>${monthAbbr}</div>
         <div>
-          <h3>${escapeHtml(p.title)}</h3>
-          ${p.image ? `<img class="post-image" src="${p.image}" alt="">` : ''}
+          <h3><a href="post.html?id=${p.id}">${escapeHtml(p.title)}</a></h3>
+          ${p.image ? `<a href="post.html?id=${p.id}"><img class="post-image" src="${p.image}" alt="" loading="lazy"></a>` : ''}
           ${vid ? `<div class="video-embed"><iframe src="https://www.youtube-nocookie.com/embed/${vid}" allowfullscreen></iframe></div>` : ''}
           <p>${escapeHtml(p.body)}</p>
           <span class="tag"><span class="dot" style="background:${g.color}"></span>${g.label}</span>
@@ -267,7 +276,7 @@
       return `
       <div class="thought">
         <div class="date">${d} ${monthAbbr}</div>
-        <h3>${escapeHtml(p.title)}</h3>
+        <h3><a href="post.html?id=${p.id}">${escapeHtml(p.title)}</a></h3>
         <p>${escapeHtml(p.body)}</p>
       </div>`;
     }

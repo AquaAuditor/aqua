@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Página no encontrada — Aqua Auditore</title>
+<link rel="icon" type="image/png" href="/aqua/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600&family=Inter:wght@400&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#070C12; --aqua:#4FD9E0; --text:#DCEFF1; --text-soft:#7C9AA0; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; background:var(--bg); color:var(--text); font-family:'Inter', sans-serif; text-align:center; padding:28px; }
+  h1{ font-family:'Sora', sans-serif; font-size:1.6rem; margin:0 0 12px; }
+  p{ color:var(--text-soft); margin:0 0 22px; }
+  a{ color:var(--aqua); text-decoration:none; }
+</style>
+<script>
+  // Los enlaces compartidos tienen la forma /aqua/p/<id>.html. Si esa mini-página todavía
+  // no se ha generado (GitHub la crea cada hora), llevamos al lector directo a la entrada.
+  (function(){
+    var m = location.pathname.match(/\/p\/([0-9a-f-]{36})\.html$/i);
+    if(m){
+      var base = location.pathname.replace(/\/p\/[^/]*$/, '/');
+      location.replace(base + 'post.html?id=' + m[1]);
+    }
+  })();
+</script>
+</head>
+<body>
+  <div>
+    <h1>Esta página no existe</h1>
+    <p>Puede que el enlace esté mal escrito o que la entrada se haya borrado.</p>
+    <a href="/aqua/">← Volver al blog</a>
+  </div>
+</body>
+</html>

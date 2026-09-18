@@ -1,0 +1,48 @@
+# Publica el sitio en GitHub Pages.
+# Antes de publicar genera las vistas previas (p/<id>.html) de cada entrada del blog,
+# para que los enlaces compartidos en Discord / X muestren título, descripción e imagen.
+#
+# Se ejecuta: al subir cambios a main, cada hora (para recoger entradas nuevas), o a mano
+# desde la pestaña Actions > "Publicar sitio" > Run workflow.
+name: Publicar sitio
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "0 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Generar vistas previas de las entradas
+        run: python scripts/generar_previas.py
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+      - id: deploy
+        uses: actions/deploy-pages@v4
