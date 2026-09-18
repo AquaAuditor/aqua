@@ -287,6 +287,41 @@
     </div>
   </section>
 
+  <section class="section" id="juego">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Videojuego en Desarrollo</h2>
+        <button class="btn primary" onclick="openModal('juego')">+ Nuevo avance</button>
+      </div>
+      <form class="panel" id="form-juego">
+        <div class="img-preview">
+          <img id="prev-juego_portada" alt="Portada" style="border-radius:8px; width:128px; height:72px; object-fit:cover;">
+          <div>
+            <label style="margin-bottom:6px;">Portada (captura del juego, 16:9)<input type="file" id="file-juego_portada" accept="image/*"></label>
+            <button type="button" id="reset-juego_portada">Quitar portada</button>
+          </div>
+        </div>
+        <div class="panel-row">
+          <label>Nombre del juego<input type="text" id="c-juego_nombre" placeholder="Ecos del Abismo"></label>
+          <label>Motor / tecnología<input type="text" id="c-juego_motor" placeholder="Hecho en Godot 4"></label>
+          <label>Estado<input type="text" id="c-juego_estado" placeholder="Prototipo, Alpha, Beta, Publicado..."></label>
+          <label>Avance (0 a 100)<input type="number" id="c-juego_progreso" min="0" max="100" placeholder="35"></label>
+        </div>
+        <label>Descripción<textarea id="c-juego_descripcion" rows="3" placeholder="Metroidvania en pixel art con ambientación dark fantasy..."></textarea></label>
+        <div class="panel-row">
+          <label>Ya funciona (una cosa por línea)<textarea id="c-juego_hecho" rows="5" placeholder="Doble salto&#10;Impulso&#10;Guardado automático"></textarea></label>
+          <label>En camino (una cosa por línea)<textarea id="c-juego_pendiente" rows="5" placeholder="Segundo jefe&#10;Música&#10;Mapa del mundo"></textarea></label>
+        </div>
+        <label>Ruta de la versión jugable (déjalo así salvo que la cambies)<input type="text" id="c-juego_url_jugar" placeholder="juego/index.html"></label>
+        <div class="panel-actions">
+          <span class="save-status" id="status-juego"></span>
+          <button type="submit" class="btn primary">Guardar ficha del juego</button>
+        </div>
+      </form>
+      <div id="juego-list"><p class="helper-note">Cargando...</p></div>
+    </div>
+  </section>
+
   <section class="section" id="videos">
     <div class="wrap">
       <div class="section-head">
@@ -465,7 +500,7 @@
       </div>`;
     }
 
-    function iaCardHtml(p){
+    function iaCardHtml(p, section){
       const [y,m,d] = p.date.split('-');
       const monthAbbr = MONTHS[parseInt(m,10)-1] || '';
       return `
@@ -475,7 +510,7 @@
           <h3>${escapeHtml(p.title)}</h3>
           ${p.image ? `<img class="post-image" src="${p.image}" alt="">` : ''}
           <p>${escapeHtml(p.body)}</p>
-          ${adminButtonsHtml('ia', p.id)}
+          ${adminButtonsHtml(section, p.id)}
         </div>
       </article>`;
     }
@@ -484,7 +519,9 @@
       const diarios = posts.filter(p=>p.section==='diario').sort((a,b)=> b.date.localeCompare(a.date));
       const pensamientos = posts.filter(p=>p.section==='pensamiento').sort((a,b)=> b.date.localeCompare(a.date));
       const ia = posts.filter(p=>p.section==='ia').sort((a,b)=> b.date.localeCompare(a.date));
-      document.getElementById('ia-list').innerHTML = ia.map(iaCardHtml).join('') || '<p class="helper-note">Aún no hay publicaciones.</p>';
+      document.getElementById('ia-list').innerHTML = ia.map(p => iaCardHtml(p, 'ia')).join('') || '<p class="helper-note">Aún no hay publicaciones.</p>';
+      const juego = posts.filter(p=>p.section==='juego').sort((a,b)=> b.date.localeCompare(a.date));
+      document.getElementById('juego-list').innerHTML = juego.map(p => iaCardHtml(p, 'juego')).join('') || '<p class="helper-note">Aún no hay avances.</p>';
       document.getElementById('diarios-list').innerHTML = diarios.map(diarioCardHtml).join('') || '<p class="helper-note">Aún no hay entradas.</p>';
       document.getElementById('pensamientos-list').innerHTML = pensamientos.map(pensamientoCardHtml).join('') || '<p class="helper-note">Aún no hay pensamientos.</p>';
     }
@@ -501,12 +538,15 @@
     // Guardado como pares clave/valor en la tabla `site_content`.
     // Si una clave no existe (o su valor es null) index.html muestra el texto/imagen original del HTML.
     const DEFAULT_IMAGE = document.querySelector('.brand img').src;
+    const EMPTY_IMAGE = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="16" height="9"><rect width="16" height="9" fill="#070C12"/></svg>');
     let siteContent = {};
     const pendingImages = {};   // key -> dataURL (nueva), null (volver a original) o undefined (sin cambios)
 
     const TEXT_KEYS = ['hero_kicker','hero_title','hero_lede','about_title','about_body','link_twitch','link_discord','link_x',
-                       'videos_kicker','videos_title','videos_lede','ia_kicker','ia_title','ia_lede'];
-    const IMAGE_KEYS = ['about_image','logo_image'];
+                       'videos_kicker','videos_title','videos_lede','ia_kicker','ia_title','ia_lede',
+                       'juego_nombre','juego_motor','juego_estado','juego_progreso','juego_descripcion',
+                       'juego_hecho','juego_pendiente','juego_url_jugar'];
+    const IMAGE_KEYS = ['about_image','logo_image','juego_portada'];
 
     async function loadSiteContent(){
       const { data, error } = await db.from('site_content').select('key,value');
@@ -523,7 +563,7 @@
       }
       for(const k of IMAGE_KEYS){
         pendingImages[k] = undefined;
-        document.getElementById('prev-' + k).src = siteContent[k] || DEFAULT_IMAGE;
+        document.getElementById('prev-' + k).src = siteContent[k] || (k === 'juego_portada' ? EMPTY_IMAGE : DEFAULT_IMAGE);
       }
       renderMigrationNotice();
     }
@@ -536,7 +576,8 @@
         for(const k of keys){
           if(IMAGE_KEYS.includes(k)){
             if(pendingImages[k] === undefined) continue;                       // sin cambios
-            const value = pendingImages[k] ? await uploadImage(pendingImages[k], 'sitio', 400) : null; // null = volver a la original
+            const maxW = k === 'juego_portada' ? 1200 : 400;
+            const value = pendingImages[k] ? await uploadImage(pendingImages[k], 'sitio', maxW) : null; // null = volver a la original
             rows.push({ key: k, value });
           } else {
             rows.push({ key: k, value: document.getElementById('c-' + k).value.trim() || null });
@@ -572,6 +613,11 @@
     document.getElementById('form-ia-head').addEventListener('submit', e => {
       e.preventDefault();
       saveSiteContent(['ia_kicker','ia_title','ia_lede'], 'status-ia-head');
+    });
+    document.getElementById('form-juego').addEventListener('submit', e => {
+      e.preventDefault();
+      saveSiteContent(['juego_portada','juego_nombre','juego_motor','juego_estado','juego_progreso','juego_descripcion',
+                       'juego_hecho','juego_pendiente','juego_url_jugar'], 'status-juego');
     });
 
     /* ---------- Videos de YouTube (tabla `videos`) ---------- */
@@ -690,7 +736,7 @@
       document.getElementById('reset-' + k).addEventListener('click', () => {
         pendingImages[k] = null;
         document.getElementById('file-' + k).value = '';
-        document.getElementById('prev-' + k).src = DEFAULT_IMAGE;
+        document.getElementById('prev-' + k).src = k === 'juego_portada' ? EMPTY_IMAGE : DEFAULT_IMAGE;
       });
     }
 
@@ -793,13 +839,15 @@
       document.getElementById('f-section').value = section;
       document.getElementById('f-id').value = id || '';
       document.getElementById('f-game-wrap').style.display  = section === 'diario' ? 'block' : 'none';
-      document.getElementById('f-media-wrap').style.display = (section === 'diario' || section === 'ia') ? 'block' : 'none';
+      const withImage = section === 'diario' || section === 'ia' || section === 'juego';
+      document.getElementById('f-media-wrap').style.display = withImage ? 'block' : 'none';
       document.getElementById('f-video-wrap').style.display = section === 'diario' ? 'block' : 'none';
-      document.getElementById('f-body-label').textContent   = section === 'ia' ? 'Descripción' : 'Texto';
+      document.getElementById('f-body-label').textContent   = (section === 'ia' || section === 'juego') ? 'Descripción' : 'Texto';
       const TITLES = {
         diario:      [ 'Nueva entrada de juego', 'Editar entrada' ],
         pensamiento: [ 'Nuevo pensamiento',      'Editar pensamiento' ],
-        ia:          [ 'Nueva publicación de IA','Editar publicación' ]
+        ia:          [ 'Nueva publicación de IA','Editar publicación' ],
+        juego:       [ 'Nuevo avance del juego', 'Editar avance' ]
       };
       document.getElementById('modal-title').textContent = (TITLES[section] || TITLES.pensamiento)[id ? 1 : 0];
 
@@ -813,7 +861,7 @@
             document.getElementById('f-game').value = p.game || 'destiny';
             document.getElementById('f-video').value = p.video || '';
           }
-          if(section === 'diario' || section === 'ia'){
+          if(withImage){
             if(p.image){
               currentImageData = p.image;
               const prev = document.getElementById('f-image-preview');
@@ -865,7 +913,7 @@
         obj.game = document.getElementById('f-game').value;
         obj.video = document.getElementById('f-video').value.trim();
       }
-      if(section === 'diario' || section === 'ia'){
+      if(section === 'diario' || section === 'ia' || section === 'juego'){
         if(pendingPostImage){
           try { obj.image = await uploadImage(pendingPostImage, 'posts'); }
           catch(err){ alert('No se pudo subir la imagen: ' + err.message); return; }

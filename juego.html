@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Videojuego en Desarrollo — Aqua Auditore</title>
+<meta name="description" content="Ecos del Abismo: el videojuego que estoy desarrollando, su avance y devlog.">
+<link rel="icon" type="image/png" href="favicon.png">
+<meta property="og:site_name" content="Aqua Auditore">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Videojuego en Desarrollo — Aqua Auditore">
+<meta property="og:description" content="Ecos del Abismo: el videojuego que estoy desarrollando, su avance y devlog.">
+<meta property="og:image" content="https://aquaauditor.github.io/aqua/og-logo.jpg">
+<meta name="twitter:card" content="summary">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:        #070C12;
+    --bg-soft:   #0E1B26;
+    --aqua:      #4FD9E0;
+    --aqua-dim:  #1C6E77;
+    --text:      #DCEFF1;
+    --text-soft: #7C9AA0;
+    --line:      rgba(79,217,224,0.14);
+    --ok:        #6FBF73;
+    --warn:      #E8A33D;
+  }
+
+  *{ box-sizing: border-box; }
+  html{ scroll-behavior: smooth; }
+
+  body{
+    margin:0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3{
+    font-family: 'Sora', sans-serif;
+    font-weight: 600;
+    line-height: 1.2;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+
+  a{ color: inherit; text-decoration: none; }
+  img{ max-width: 100%; display:block; }
+
+  .wrap{ max-width: 980px; margin: 0 auto; padding: 0 28px; }
+
+  header{ padding: 30px 0 24px; border-bottom: 1px solid var(--line); }
+  .header-row{ display:flex; align-items:center; justify-content:space-between; gap: 16px; flex-wrap: wrap; }
+  .brand{ display:flex; align-items:center; gap: 14px; }
+  .brand img{ width: 40px; height: 40px; border-radius: 50%; box-shadow: 0 0 0 2px var(--bg), 0 0 14px rgba(79,217,224,0.35); }
+  .brand-name{ font-size: 1.25rem; font-weight: 700; }
+  .brand-name span{ color: var(--aqua); }
+
+  nav ul{ list-style:none; display:flex; gap: 22px; margin:0; padding:0; font-size: 0.92rem; flex-wrap: wrap; }
+  nav a{ color: var(--text-soft); transition: color .15s ease; }
+  nav a:hover, nav a.active{ color: var(--aqua); }
+
+  .btn{
+    padding: 11px 20px; border-radius: 6px; font-size: 0.9rem; cursor: pointer;
+    border: 1px solid var(--line); background: transparent; color: var(--text);
+    font-family: 'Inter', sans-serif; transition: all .15s ease; display:inline-flex; align-items:center; gap:8px;
+  }
+  .btn.primary{ background: var(--aqua); color:#06171a; border-color: var(--aqua); font-weight:600; }
+  .btn.primary:hover{ filter: brightness(1.08); }
+  .btn.ghost:hover{ border-color: var(--aqua); color: var(--aqua); }
+
+  /* Ficha del juego */
+  .game{ padding: 44px 0 30px; position: relative; overflow:hidden; }
+  .hero-glow{
+    position:absolute; top: -140px; right: -120px; width: 420px; height: 420px;
+    background: radial-gradient(circle, rgba(79,217,224,0.20), transparent 70%); pointer-events:none;
+  }
+  .crumb{ font-size: 0.85rem; color: var(--text-soft); margin-bottom: 22px; position:relative; }
+  .crumb a:hover{ color: var(--aqua); }
+  .game-card{
+    position:relative; display:grid; grid-template-columns: 340px 1fr; gap: 32px; align-items:start;
+    background: var(--bg-soft); border: 1px solid var(--line); border-radius: 12px; padding: 28px;
+  }
+  .cover{ width:100%; aspect-ratio: 16/9; object-fit: cover; border-radius: 8px; background:#000; image-rendering: pixelated; }
+  .cover.empty{ display:flex; align-items:center; justify-content:center; color: var(--text-soft); font-size: 0.85rem; background: var(--bg); border: 1px dashed var(--line); }
+  .kicker{ color: var(--aqua); font-size: 0.9rem; margin: 0 0 8px; }
+  .game-card h1{ font-size: clamp(1.6rem, 3.6vw, 2.2rem); }
+  .status-row{ display:flex; align-items:center; gap: 12px; flex-wrap:wrap; margin: 12px 0 16px; font-size: 0.85rem; color: var(--text-soft); }
+  .badge{ display:inline-flex; align-items:center; gap:7px; padding: 4px 12px; border-radius: 999px; border: 1px solid var(--line); font-size: 0.8rem; color: var(--text); }
+  .badge::before{ content:''; width:8px; height:8px; border-radius:50%; background: var(--warn); }
+  .badge.listo::before{ background: var(--ok); }
+  .progress{ height: 8px; background: var(--bg); border-radius: 999px; overflow:hidden; border: 1px solid var(--line); margin-top: 6px; }
+  .progress > div{ height:100%; background: linear-gradient(90deg, var(--aqua-dim), var(--aqua)); width: 0; transition: width .6s ease; }
+  .progress-label{ display:flex; justify-content:space-between; font-size: 0.8rem; color: var(--text-soft); margin-top: 6px; }
+  .desc{ color: var(--text-soft); margin: 0 0 20px; white-space: pre-line; max-width: 60ch; }
+  .actions{ display:flex; gap: 12px; flex-wrap:wrap; }
+  .soon{ font-size: 0.85rem; color: var(--text-soft); align-self:center; }
+
+  .lists{ display:grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 26px; position:relative; }
+  .list{ background: var(--bg-soft); border: 1px solid var(--line); border-radius: 10px; padding: 20px 22px; }
+  .list h3{ font-size: 0.95rem; margin-bottom: 10px; color: var(--text-soft); text-transform: uppercase; letter-spacing: 0.06em; }
+  .list ul{ margin:0; padding:0; list-style:none; }
+  .list li{ padding: 6px 0 6px 22px; position:relative; font-size: 0.95rem; }
+  .list li::before{ content:''; position:absolute; left:2px; top: 14px; width: 8px; height: 8px; border-radius:50%; }
+  .list.done li::before{ background: var(--ok); }
+  .list.todo li::before{ background: var(--warn); }
+
+  /* Devlog */
+  .section{ padding: 40px 0 60px; }
+  .section-head{ display:flex; align-items:center; justify-content:space-between; border-bottom: 1px solid var(--line); padding-bottom: 14px; margin-bottom: 30px; flex-wrap: wrap; gap: 12px; }
+  .section-head h2{ font-size: 1.4rem; }
+  .grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 26px; }
+  .card{
+    background: var(--bg-soft); border: 1px solid var(--line); border-radius: 10px; overflow:hidden;
+    display:flex; flex-direction:column; transition: border-color .15s ease, transform .15s ease;
+  }
+  .card:hover{ border-color: rgba(79,217,224,0.45); transform: translateY(-2px); }
+  .card .thumb{ width:100%; aspect-ratio: 16/9; object-fit: cover; background:#000; image-rendering: pixelated; }
+  .card-body{ padding: 18px 20px 20px; display:flex; flex-direction:column; gap: 8px; flex:1; }
+  .card .date{ font-size: 0.78rem; color: var(--aqua); letter-spacing: 0.02em; }
+  .card h3{ font-size: 1.1rem; }
+  .card p{
+    color: var(--text-soft); margin: 0; font-size: 0.92rem; white-space: pre-line;
+    display:-webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow:hidden;
+  }
+  .card .more{ margin-top:auto; padding-top: 8px; font-size: 0.82rem; color: var(--text-soft); }
+  .card:hover .more{ color: var(--aqua); }
+  .helper-note{ color: var(--text-soft); }
+
+  footer{ padding: 40px 0 60px; color: var(--text-soft); font-size: 0.88rem; border-top: 1px solid var(--line); }
+  footer .wrap{ display:flex; justify-content:space-between; flex-wrap: wrap; gap:12px; }
+  footer .social{ display:flex; gap:18px; align-items:center; }
+  footer .social a:hover{ color: var(--aqua); }
+
+  @media (max-width: 760px){
+    .game-card{ grid-template-columns: 1fr; }
+    .lists{ grid-template-columns: 1fr; }
+  }
+  @media (max-width: 620px){
+    nav ul{ gap: 14px; font-size: 0.85rem; }
+    .grid{ grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+  <header>
+    <div class="wrap header-row">
+      <a class="brand" href="index.html">
+        <img id="brand-logo" src="logo.jpg" alt="Emblema Aqua Auditore">
+        <div class="brand-name">Aqua <span>Auditore</span></div>
+      </a>
+      <nav>
+        <ul>
+          <li><a href="index.html#inicio">Inicio</a></li>
+          <li><a href="index.html#diarios">Diarios de juego</a></li>
+          <li><a href="index.html#pensamientos">Pensamientos</a></li>
+          <li><a href="videos.html">YouTube</a></li>
+          <li><a href="ia.html" class="active">Desarrollo IA</a></li>
+          <li><a href="index.html#sobre-mi">Sobre mí</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <section class="game">
+    <div class="hero-glow"></div>
+    <div class="wrap">
+      <div class="crumb"><a href="ia.html">Desarrollo IA</a> &nbsp;/&nbsp; Videojuego en Desarrollo</div>
+
+      <div class="game-card">
+        <div>
+          <img class="cover" id="g-portada" src="" alt="" style="display:none">
+          <div class="cover empty" id="g-portada-empty">Portada del juego</div>
+        </div>
+        <div>
+          <p class="kicker">Videojuego en Desarrollo</p>
+          <h1 id="g-nombre">Ecos del Abismo</h1>
+          <div class="status-row">
+            <span class="badge" id="g-estado">Prototipo</span>
+            <span id="g-motor">Hecho en Godot 4</span>
+          </div>
+          <div class="progress"><div id="g-barra"></div></div>
+          <div class="progress-label"><span>Avance</span><span id="g-progreso">0%</span></div>
+          <p class="desc" id="g-descripcion" style="margin-top:16px;">Metroidvania en pixel art con ambientación dark fantasy.</p>
+          <div class="actions">
+            <a class="btn primary" id="btn-jugar" href="juego/index.html" target="_blank" rel="noopener" style="display:none">▶ Jugar en el navegador</a>
+            <span class="soon" id="jugar-pronto">La versión jugable estará disponible pronto.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="lists">
+        <div class="list done">
+          <h3>Ya funciona</h3>
+          <ul id="g-hecho"><li class="helper-note">—</li></ul>
+        </div>
+        <div class="list todo">
+          <h3>En camino</h3>
+          <ul id="g-pendiente"><li class="helper-note">—</li></ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Devlog</h2>
+      </div>
+      <div class="grid" id="devlog-grid"><p class="helper-note">Cargando...</p></div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap">
+      <span>© 2026 Aqua Auditore</span>
+      <div class="social">
+        <a href="#" id="link-twitch" target="_blank" rel="noopener">Twitch</a>
+        <a href="#" id="link-discord" target="_blank" rel="noopener">Discord</a>
+        <a href="#" id="link-x" target="_blank" rel="noopener">X</a>
+        <a href="login.html">Iniciar sesión</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = 'https://dolhldpxkkkyqfqkerbg.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRvbGhsZHB4a2treXFmcWtlcmJnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwODE4ODQsImV4cCI6MjEwNDY1Nzg4NH0.kqVg2n8T1p2smpck1uJLQLW07V5s71pidn4SJGaZbSk';
+    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const MONTHS = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+
+    function escapeHtml(str){
+      const div = document.createElement('div');
+      div.textContent = str || '';
+      return div.innerHTML;
+    }
+
+    function formatDate(date){
+      if(!date) return '';
+      const [y,m,d] = date.split('-');
+      return `${parseInt(d,10)} ${MONTHS[parseInt(m,10)-1] || ''} ${y}`;
+    }
+
+    function listHtml(text){
+      const items = (text || '').split('\n').map(s => s.trim()).filter(Boolean);
+      return items.map(i => `<li>${escapeHtml(i)}</li>`).join('') || '<li class="helper-note">—</li>';
+    }
+
+    /* ---------- Ficha del juego (tabla site_content, claves juego_*) ---------- */
+    async function loadGame(){
+      const { data, error } = await db.from('site_content').select('key,value');
+      if(error){ console.error(error); return; }
+      const c = {};
+      for(const row of data) c[row.key] = row.value;
+
+      if(c.juego_nombre)      document.getElementById('g-nombre').textContent = c.juego_nombre;
+      if(c.juego_descripcion) document.getElementById('g-descripcion').textContent = c.juego_descripcion;
+      if(c.juego_motor)       document.getElementById('g-motor').textContent = c.juego_motor;
+      if(c.juego_estado){
+        const b = document.getElementById('g-estado');
+        b.textContent = c.juego_estado;
+        b.classList.toggle('listo', /public|termin|lanz/i.test(c.juego_estado));
+      }
+      const pct = Math.max(0, Math.min(100, parseInt(c.juego_progreso, 10) || 0));
+      document.getElementById('g-progreso').textContent = pct + '%';
+      requestAnimationFrame(() => document.getElementById('g-barra').style.width = pct + '%');
+
+      document.getElementById('g-hecho').innerHTML = listHtml(c.juego_hecho);
+      document.getElementById('g-pendiente').innerHTML = listHtml(c.juego_pendiente);
+
+      if(c.juego_portada){
+        const img = document.getElementById('g-portada');
+        img.src = c.juego_portada; img.style.display = 'block';
+        document.getElementById('g-portada-empty').style.display = 'none';
+      }
+
+      // Logo y redes del pie
+      if(c.logo_image) document.getElementById('brand-logo').src = c.logo_image;
+      for(const [k, id] of [['link_twitch','link-twitch'],['link_discord','link-discord'],['link_x','link-x']]){
+        if(c[k]) document.getElementById(id).href = c[k];
+      }
+
+      checkPlayable(c.juego_url_jugar || 'juego/index.html');
+    }
+
+    // El botón "Jugar" solo aparece si la exportación del juego existe de verdad.
+    async function checkPlayable(url){
+      try {
+        const r = await fetch(url, { method: 'HEAD', cache: 'no-store' });
+        if(r.ok){
+          const btn = document.getElementById('btn-jugar');
+          btn.href = url; btn.style.display = 'inline-flex';
+          document.getElementById('jugar-pronto').style.display = 'none';
+        }
+      } catch(e){ /* no hay versión jugable todavía */ }
+    }
+
+    /* ---------- Devlog (tabla posts, section = 'juego') ---------- */
+    function cardHtml(p){
+      return `
+      <a class="card" href="post.html?id=${p.id}">
+        ${p.image ? `<img class="thumb" src="${p.image}" alt="" loading="lazy">` : ''}
+        <div class="card-body">
+          <span class="date">${formatDate(p.date)}</span>
+          <h3>${escapeHtml(p.title)}</h3>
+          <p>${escapeHtml(p.body)}</p>
+          <span class="more">Leer más →</span>
+        </div>
+      </a>`;
+    }
+
+    async function loadDevlog(){
+      const { data, error } = await db.from('posts').select('*').eq('section', 'juego').order('date', {ascending:false});
+      const el = document.getElementById('devlog-grid');
+      if(error){ console.error(error); el.innerHTML = '<p class="helper-note">No se pudo cargar el devlog.</p>'; return; }
+      el.innerHTML = data.map(cardHtml).join('') || '<p class="helper-note">Aún no hay avances publicados.</p>';
+    }
+
+    loadGame();
+    loadDevlog();
+  </script>
+
+</body>
+</html>
