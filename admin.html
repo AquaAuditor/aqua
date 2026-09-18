@@ -268,6 +268,25 @@
     </div>
   </section>
 
+  <section class="section" id="ia">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Desarrollo IA</h2>
+        <button class="btn primary" onclick="openModal('ia')">+ Nueva publicación</button>
+      </div>
+      <form class="panel" id="form-ia-head">
+        <label>Frase corta (arriba del título)<input type="text" id="c-ia_kicker" placeholder="Desarrollo IA"></label>
+        <label>Título de la página<input type="text" id="c-ia_title" placeholder="Lo que construyo con inteligencia artificial"></label>
+        <label>Texto de introducción<textarea id="c-ia_lede" rows="3" placeholder="Proyectos, pruebas y aprendizajes..."></textarea></label>
+        <div class="panel-actions">
+          <span class="save-status" id="status-ia-head"></span>
+          <button type="submit" class="btn primary">Guardar cabecera</button>
+        </div>
+      </form>
+      <div id="ia-list"><p class="helper-note">Cargando...</p></div>
+    </div>
+  </section>
+
   <section class="section" id="videos">
     <div class="wrap">
       <div class="section-head">
@@ -339,9 +358,11 @@
           <label>Imagen (opcional)<input type="file" id="f-image" accept="image/*"></label>
           <img id="f-image-preview" style="display:none; max-width:160px; border-radius:8px; margin-bottom:6px;">
           <button type="button" id="f-image-remove" class="link-btn" style="margin-bottom:16px;">Quitar imagen</button>
-          <label>Video de YouTube (opcional)<input type="text" id="f-video" placeholder="Pega el link del video"></label>
+          <div id="f-video-wrap">
+            <label>Video de YouTube (opcional)<input type="text" id="f-video" placeholder="Pega el link del video"></label>
+          </div>
         </div>
-        <label>Texto<textarea id="f-body" rows="5" required></textarea></label>
+        <label><span id="f-body-label">Texto</span><textarea id="f-body" rows="5" required></textarea></label>
         <div class="modal-actions">
           <button type="button" class="btn ghost" id="btn-cancel">Cancelar</button>
           <button type="submit" class="btn primary">Guardar</button>
@@ -444,9 +465,26 @@
       </div>`;
     }
 
+    function iaCardHtml(p){
+      const [y,m,d] = p.date.split('-');
+      const monthAbbr = MONTHS[parseInt(m,10)-1] || '';
+      return `
+      <article class="post">
+        <div class="date"><strong>${d}</strong>${monthAbbr}</div>
+        <div>
+          <h3>${escapeHtml(p.title)}</h3>
+          ${p.image ? `<img class="post-image" src="${p.image}" alt="">` : ''}
+          <p>${escapeHtml(p.body)}</p>
+          ${adminButtonsHtml('ia', p.id)}
+        </div>
+      </article>`;
+    }
+
     function renderAll(){
       const diarios = posts.filter(p=>p.section==='diario').sort((a,b)=> b.date.localeCompare(a.date));
       const pensamientos = posts.filter(p=>p.section==='pensamiento').sort((a,b)=> b.date.localeCompare(a.date));
+      const ia = posts.filter(p=>p.section==='ia').sort((a,b)=> b.date.localeCompare(a.date));
+      document.getElementById('ia-list').innerHTML = ia.map(iaCardHtml).join('') || '<p class="helper-note">Aún no hay publicaciones.</p>';
       document.getElementById('diarios-list').innerHTML = diarios.map(diarioCardHtml).join('') || '<p class="helper-note">Aún no hay entradas.</p>';
       document.getElementById('pensamientos-list').innerHTML = pensamientos.map(pensamientoCardHtml).join('') || '<p class="helper-note">Aún no hay pensamientos.</p>';
     }
@@ -467,7 +505,7 @@
     const pendingImages = {};   // key -> dataURL (nueva), null (volver a original) o undefined (sin cambios)
 
     const TEXT_KEYS = ['hero_kicker','hero_title','hero_lede','about_title','about_body','link_twitch','link_discord','link_x',
-                       'videos_kicker','videos_title','videos_lede'];
+                       'videos_kicker','videos_title','videos_lede','ia_kicker','ia_title','ia_lede'];
     const IMAGE_KEYS = ['about_image','logo_image'];
 
     async function loadSiteContent(){
@@ -530,6 +568,10 @@
     document.getElementById('form-videos-head').addEventListener('submit', e => {
       e.preventDefault();
       saveSiteContent(['videos_kicker','videos_title','videos_lede'], 'status-videos-head');
+    });
+    document.getElementById('form-ia-head').addEventListener('submit', e => {
+      e.preventDefault();
+      saveSiteContent(['ia_kicker','ia_title','ia_lede'], 'status-ia-head');
     });
 
     /* ---------- Videos de YouTube (tabla `videos`) ---------- */
@@ -750,11 +792,16 @@
       document.getElementById('f-image-preview').style.display = 'none';
       document.getElementById('f-section').value = section;
       document.getElementById('f-id').value = id || '';
-      document.getElementById('f-game-wrap').style.display = section === 'diario' ? 'block' : 'none';
-      document.getElementById('f-media-wrap').style.display = section === 'diario' ? 'block' : 'none';
-      document.getElementById('modal-title').textContent = section === 'diario'
-        ? (id ? 'Editar entrada' : 'Nueva entrada de juego')
-        : (id ? 'Editar pensamiento' : 'Nuevo pensamiento');
+      document.getElementById('f-game-wrap').style.display  = section === 'diario' ? 'block' : 'none';
+      document.getElementById('f-media-wrap').style.display = (section === 'diario' || section === 'ia') ? 'block' : 'none';
+      document.getElementById('f-video-wrap').style.display = section === 'diario' ? 'block' : 'none';
+      document.getElementById('f-body-label').textContent   = section === 'ia' ? 'Descripción' : 'Texto';
+      const TITLES = {
+        diario:      [ 'Nueva entrada de juego', 'Editar entrada' ],
+        pensamiento: [ 'Nuevo pensamiento',      'Editar pensamiento' ],
+        ia:          [ 'Nueva publicación de IA','Editar publicación' ]
+      };
+      document.getElementById('modal-title').textContent = (TITLES[section] || TITLES.pensamiento)[id ? 1 : 0];
 
       if(id){
         const p = posts.find(x => String(x.id) === String(id));
@@ -765,6 +812,8 @@
           if(section === 'diario'){
             document.getElementById('f-game').value = p.game || 'destiny';
             document.getElementById('f-video').value = p.video || '';
+          }
+          if(section === 'diario' || section === 'ia'){
             if(p.image){
               currentImageData = p.image;
               const prev = document.getElementById('f-image-preview');
@@ -815,6 +864,8 @@
       if(section === 'diario'){
         obj.game = document.getElementById('f-game').value;
         obj.video = document.getElementById('f-video').value.trim();
+      }
+      if(section === 'diario' || section === 'ia'){
         if(pendingPostImage){
           try { obj.image = await uploadImage(pendingPostImage, 'posts'); }
           catch(err){ alert('No se pudo subir la imagen: ' + err.message); return; }

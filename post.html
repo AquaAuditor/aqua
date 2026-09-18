@@ -62,7 +62,7 @@
   .brand-name{ font-size: 1.25rem; font-weight: 700; }
   .brand-name span{ color: var(--aqua); }
 
-  nav ul{ list-style:none; display:flex; gap: 22px; margin:0; padding:0; font-size: 0.92rem; }
+  nav ul{ list-style:none; display:flex; gap: 22px; margin:0; padding:0; font-size: 0.92rem; flex-wrap: wrap; }
   nav a{ color: var(--text-soft); transition: color .15s ease; }
   nav a:hover{ color: var(--aqua); }
 
@@ -118,6 +118,7 @@
           <li><a href="index.html#diarios">Diarios de juego</a></li>
           <li><a href="index.html#pensamientos">Pensamientos</a></li>
           <li><a href="videos.html">YouTube</a></li>
+          <li><a href="ia.html">Desarrollo IA</a></li>
           <li><a href="index.html#sobre-mi">Sobre mí</a></li>
         </ul>
       </nav>
@@ -206,20 +207,27 @@
       document.title = `${p.title} — Aqua Auditore`;
       document.querySelector('meta[name="description"]').content = (p.body || '').slice(0, 160);
 
+      const SECTIONS = {
+        diario:      { label:'Diario de juego', back:'index.html#diarios' },
+        pensamiento: { label:'Pensamiento',     back:'index.html#pensamientos' },
+        ia:          { label:'Desarrollo IA',   back:'ia.html' }
+      };
+      const sec = SECTIONS[p.section] || SECTIONS.pensamiento;
+
       content.innerHTML = `
         <div class="topbar">
-          <a class="back" href="index.html#${isDiario ? 'diarios' : 'pensamientos'}">← Volver al blog</a>
+          <a class="back" href="${sec.back}">← Volver</a>
           <button class="btn" onclick="copyLink(this)">Copiar enlace</button>
         </div>
         <div class="meta">
-          <span class="kind">${isDiario ? 'Diario de juego' : 'Pensamiento'}</span>
+          <span class="kind">${sec.label}</span>
           <span>${formatDate(p.date)}</span>
           ${isDiario ? `<span class="tag"><span class="dot" style="background:${g.color}"></span>${g.label}</span>` : ''}
         </div>
         <h1>${escapeHtml(p.title)}</h1>
         ${p.image ? `<img class="post-image" src="${p.image}" alt="">` : ''}
         ${vid ? `<div class="video-embed"><iframe src="https://www.youtube-nocookie.com/embed/${vid}" allowfullscreen></iframe></div>` : ''}
-        <div class="body ${isDiario ? '' : 'thought-mark'}">${escapeHtml(p.body)}</div>`;
+        <div class="body ${p.section === 'pensamiento' ? 'thought-mark' : ''}">${escapeHtml(p.body)}</div>`;
     }
 
     function renderState(msg){
