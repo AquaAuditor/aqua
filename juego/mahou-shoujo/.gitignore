@@ -1,0 +1,6 @@
+# El proyecto de Godot vive en esta misma carpeta, pero al sitio web solo debe
+# subirse la exportación (los archivos index.*). Todo lo demás queda fuera:
+# código fuente, assets originales y la caché .godot/
+*
+!index.*
+!.gitignore
