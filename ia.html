@@ -89,6 +89,7 @@
   .featured .progress > div{ height:100%; background: linear-gradient(90deg, var(--aqua-dim), var(--aqua)); }
   .featured .pct{ font-size: 0.78rem; color: var(--text-soft); margin-top: 4px; }
   .featured .go{ font-size: 0.9rem; color: var(--aqua); white-space: nowrap; }
+  .featured-head{ font-size: 0.8rem; color: var(--text-soft); text-transform: uppercase; letter-spacing: 0.06em; margin: 0 0 12px; }
   @media (max-width: 760px){ .featured{ grid-template-columns: 1fr; } .featured img{ max-width: 320px; } }
 
   /* Tarjetas de publicaciones */
@@ -154,17 +155,7 @@
 
   <section class="section">
     <div class="wrap">
-      <a class="featured" href="juego.html" id="featured-game">
-        <img id="fg-portada" src="og-logo.jpg" alt="">
-        <div>
-          <p class="kicker-sm">Videojuego en Desarrollo</p>
-          <h2 id="fg-nombre">Ecos del Abismo</h2>
-          <p id="fg-descripcion">Metroidvania en pixel art con ambientación dark fantasy.</p>
-          <div class="progress"><div id="fg-barra" style="width:0"></div></div>
-          <div class="pct"><span id="fg-estado">Prototipo</span> · <span id="fg-progreso">0%</span> de avance</div>
-        </div>
-        <span class="go">Ver el proyecto →</span>
-      </a>
+      <div id="featured-games"></div>
       <div class="grid" id="ia-grid"><p class="helper-note">Cargando...</p></div>
     </div>
   </section>
@@ -237,17 +228,32 @@
         else if(IMAGE_FIELDS[row.key]) document.getElementById(IMAGE_FIELDS[row.key]).src = row.value;
         else if(LINK_FIELDS[row.key])  document.getElementById(LINK_FIELDS[row.key]).href = row.value;
       }
-      // Tarjeta destacada del videojuego (misma ficha que juego.html)
-      if(c.juego_nombre)      document.getElementById('fg-nombre').textContent = c.juego_nombre;
-      if(c.juego_descripcion) document.getElementById('fg-descripcion').textContent = c.juego_descripcion.split(/\r?\n/)[0];
-      if(c.juego_estado)      document.getElementById('fg-estado').textContent = c.juego_estado;
-      if(c.juego_portada)     document.getElementById('fg-portada').src = c.juego_portada;
-      const pct = Math.max(0, Math.min(100, parseInt(c.juego_progreso, 10) || 0));
-      document.getElementById('fg-progreso').textContent = pct + '%';
-      document.getElementById('fg-barra').style.width = pct + '%';
+    }
+
+    // Tarjetas destacadas: un videojuego en desarrollo por tarjeta.
+    async function loadFeaturedGames(){
+      const { data, error } = await db.from('juegos').select('*').order('orden', {ascending:true});
+      if(error || !data || !data.length) return;   // sin juegos, la sección no aparece
+      const box = document.getElementById('featured-games');
+      box.innerHTML = '<p class="featured-head">Videojuegos en desarrollo</p>' + data.map(g => {
+        const pct = Math.max(0, Math.min(100, parseInt(g.progreso, 10) || 0));
+        return `
+        <a class="featured" href="juego.html?id=${g.id}">
+          <img src="${g.portada || 'og-logo.jpg'}" alt="">
+          <div>
+            <p class="kicker-sm">${escapeHtml(g.motor || 'Videojuego')}</p>
+            <h2>${escapeHtml(g.nombre)}</h2>
+            <p>${escapeHtml((g.descripcion || '').split(/\r?\n/)[0])}</p>
+            <div class="progress"><div style="width:${pct}%"></div></div>
+            <div class="pct">${escapeHtml(g.estado || 'En desarrollo')} · ${pct}% de avance</div>
+          </div>
+          <span class="go">Ver el proyecto →</span>
+        </a>`;
+      }).join('');
     }
 
     loadSiteContent();
+    loadFeaturedGames();
     loadPosts();
   </script>
 

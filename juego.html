@@ -169,7 +169,7 @@
   <section class="game">
     <div class="hero-glow"></div>
     <div class="wrap">
-      <div class="crumb"><a href="ia.html">Desarrollo IA</a> &nbsp;/&nbsp; Videojuego en Desarrollo</div>
+      <div class="crumb"><a href="ia.html">Desarrollo IA</a> &nbsp;/&nbsp; <a href="juegos.html">Videojuegos</a> &nbsp;/&nbsp; <span id="crumb-nombre">…</span></div>
 
       <div class="game-card">
         <div>
@@ -178,7 +178,7 @@
         </div>
         <div>
           <p class="kicker">Videojuego en Desarrollo</p>
-          <h1 id="g-nombre">Ecos del Abismo</h1>
+          <h1 id="g-nombre">Cargando...</h1>
           <div class="status-row">
             <span class="badge" id="g-estado">Prototipo</span>
             <span id="g-motor">Hecho en Godot 4</span>
@@ -252,41 +252,63 @@
       return items.map(i => `<li>${escapeHtml(i)}</li>`).join('') || '<li class="helper-note">—</li>';
     }
 
-    /* ---------- Ficha del juego (tabla site_content, claves juego_*) ---------- */
-    async function loadGame(){
-      const { data, error } = await db.from('site_content').select('key,value');
-      if(error){ console.error(error); return; }
-      const c = {};
-      for(const row of data) c[row.key] = row.value;
+    /* ---------- Ficha del juego (tabla juegos) ---------- */
+    const gameId = new URLSearchParams(location.search).get('id');
+    let juego = null;
 
-      if(c.juego_nombre)      document.getElementById('g-nombre').textContent = c.juego_nombre;
-      if(c.juego_descripcion) document.getElementById('g-descripcion').textContent = c.juego_descripcion;
-      if(c.juego_motor)       document.getElementById('g-motor').textContent = c.juego_motor;
-      if(c.juego_estado){
+    function pintarFicha(g){
+      juego = g;
+      document.title = `${g.nombre} — Aqua Auditore`;
+      document.getElementById('crumb-nombre').textContent = g.nombre;
+      document.getElementById('g-nombre').textContent = g.nombre;
+      if(g.descripcion) document.getElementById('g-descripcion').textContent = g.descripcion;
+      if(g.motor)       document.getElementById('g-motor').textContent = g.motor;
+      if(g.estado){
         const b = document.getElementById('g-estado');
-        b.textContent = c.juego_estado;
-        b.classList.toggle('listo', /public|termin|lanz/i.test(c.juego_estado));
+        b.textContent = g.estado;
+        b.classList.toggle('listo', /public|termin|lanz/i.test(g.estado));
       }
-      const pct = Math.max(0, Math.min(100, parseInt(c.juego_progreso, 10) || 0));
+      const pct = Math.max(0, Math.min(100, parseInt(g.progreso, 10) || 0));
       document.getElementById('g-progreso').textContent = pct + '%';
       requestAnimationFrame(() => document.getElementById('g-barra').style.width = pct + '%');
 
-      document.getElementById('g-hecho').innerHTML = listHtml(c.juego_hecho);
-      document.getElementById('g-pendiente').innerHTML = listHtml(c.juego_pendiente);
+      document.getElementById('g-hecho').innerHTML = listHtml(g.hecho);
+      document.getElementById('g-pendiente').innerHTML = listHtml(g.pendiente);
 
-      if(c.juego_portada){
+      if(g.portada){
         const img = document.getElementById('g-portada');
-        img.src = c.juego_portada; img.style.display = 'block';
+        img.src = g.portada; img.style.display = 'block';
         document.getElementById('g-portada-empty').style.display = 'none';
       }
 
-      // Logo y redes del pie
-      if(c.logo_image) document.getElementById('brand-logo').src = c.logo_image;
-      for(const [k, id] of [['link_twitch','link-twitch'],['link_discord','link-discord'],['link_x','link-x']]){
-        if(c[k]) document.getElementById(id).href = c[k];
-      }
+      checkPlayable(g.url_jugar || `juego/${g.slug}/index.html`);
+    }
 
-      checkPlayable(c.juego_url_jugar || 'juego/index.html');
+    async function loadGame(){
+      let q = db.from('juegos').select('*');
+      // Sin id (enlaces antiguos) mostramos el primer juego de la lista.
+      q = gameId ? q.eq('id', gameId).maybeSingle() : q.order('orden', {ascending:true}).limit(1).maybeSingle();
+      const { data, error } = await q;
+      if(error || !data){
+        if(error) console.error(error);
+        document.getElementById('g-nombre').textContent = 'Este juego no existe';
+        document.getElementById('g-descripcion').innerHTML = '<a href="juegos.html" style="color:var(--aqua)">← Ver todos mis videojuegos</a>';
+        return;
+      }
+      pintarFicha(data);
+      loadDevlog(data.id);
+    }
+
+    // Logo y redes del pie
+    async function loadSiteContent(){
+      const { data, error } = await db.from('site_content').select('key,value').in('key', ['logo_image','link_twitch','link_discord','link_x']);
+      if(error) return;
+      const map = { link_twitch:'link-twitch', link_discord:'link-discord', link_x:'link-x' };
+      for(const row of data){
+        if(!row.value) continue;
+        if(row.key === 'logo_image') document.getElementById('brand-logo').src = row.value;
+        else if(map[row.key]) document.getElementById(map[row.key]).href = row.value;
+      }
     }
 
     // El botón "Jugar" solo aparece si la exportación del juego existe de verdad.
@@ -315,15 +337,15 @@
       </a>`;
     }
 
-    async function loadDevlog(){
-      const { data, error } = await db.from('posts').select('*').eq('section', 'juego').order('date', {ascending:false});
+    async function loadDevlog(juegoId){
+      const { data, error } = await db.from('posts').select('*').eq('section', 'juego').eq('juego_id', juegoId).order('date', {ascending:false});
       const el = document.getElementById('devlog-grid');
       if(error){ console.error(error); el.innerHTML = '<p class="helper-note">No se pudo cargar el devlog.</p>'; return; }
       el.innerHTML = data.map(cardHtml).join('') || '<p class="helper-note">Aún no hay avances publicados.</p>';
     }
 
+    loadSiteContent();
     loadGame();
-    loadDevlog();
   </script>
 
 </body>

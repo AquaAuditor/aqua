@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mis videojuegos — Aqua Auditore</title>
+<meta name="description" content="Los videojuegos que estoy desarrollando: avance, devlog y versiones jugables.">
+<link rel="icon" type="image/png" href="favicon.png">
+<meta property="og:site_name" content="Aqua Auditore">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Mis videojuegos — Aqua Auditore">
+<meta property="og:description" content="Los videojuegos que estoy desarrollando: avance, devlog y versiones jugables.">
+<meta property="og:image" content="https://aquaauditor.github.io/aqua/og-logo.jpg">
+<meta name="twitter:card" content="summary">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:        #070C12;
+    --bg-soft:   #0E1B26;
+    --aqua:      #4FD9E0;
+    --aqua-dim:  #1C6E77;
+    --text:      #DCEFF1;
+    --text-soft: #7C9AA0;
+    --line:      rgba(79,217,224,0.14);
+    --ok:        #6FBF73;
+    --warn:      #E8A33D;
+  }
+
+  *{ box-sizing: border-box; }
+  html{ scroll-behavior: smooth; }
+
+  body{
+    margin:0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3{
+    font-family: 'Sora', sans-serif;
+    font-weight: 600;
+    line-height: 1.2;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+
+  a{ color: inherit; text-decoration: none; }
+  img{ max-width: 100%; display:block; }
+
+  .wrap{ max-width: 980px; margin: 0 auto; padding: 0 28px; }
+
+  header{ padding: 30px 0 24px; border-bottom: 1px solid var(--line); }
+  .header-row{ display:flex; align-items:center; justify-content:space-between; gap: 16px; flex-wrap: wrap; }
+  .brand{ display:flex; align-items:center; gap: 14px; }
+  .brand img{ width: 40px; height: 40px; border-radius: 50%; box-shadow: 0 0 0 2px var(--bg), 0 0 14px rgba(79,217,224,0.35); }
+  .brand-name{ font-size: 1.25rem; font-weight: 700; }
+  .brand-name span{ color: var(--aqua); }
+
+  nav ul{ list-style:none; display:flex; gap: 22px; margin:0; padding:0; font-size: 0.92rem; flex-wrap: wrap; }
+  nav a{ color: var(--text-soft); transition: color .15s ease; }
+  nav a:hover, nav a.active{ color: var(--aqua); }
+
+  .hero{ padding: 50px 0 20px; position: relative; overflow: hidden; }
+  .hero-glow{
+    position:absolute; top: -140px; right: -120px; width: 420px; height: 420px;
+    background: radial-gradient(circle, rgba(79,217,224,0.20), transparent 70%); pointer-events:none;
+  }
+  .hero-inner{ position:relative; }
+  .crumb{ font-size: 0.85rem; color: var(--text-soft); margin-bottom: 18px; }
+  .crumb a:hover{ color: var(--aqua); }
+  .hero h1{ font-size: clamp(1.8rem, 4vw, 2.6rem); }
+  .hero .lede{ margin-top: 14px; max-width: 58ch; color: var(--text-soft); font-size: 1.02rem; }
+
+  .section{ padding: 30px 0 70px; }
+
+  .games{ display:grid; gap: 22px; }
+  .game-card{
+    display:grid; grid-template-columns: 300px 1fr; gap: 26px; align-items:center;
+    background: var(--bg-soft); border: 1px solid var(--line); border-radius: 12px; padding: 22px;
+    transition: border-color .15s ease, transform .15s ease;
+  }
+  .game-card:hover{ border-color: rgba(79,217,224,0.5); transform: translateY(-2px); }
+  .game-card .cover{ width:100%; aspect-ratio: 16/9; object-fit: cover; border-radius: 8px; background:#0A121A; image-rendering: pixelated; }
+  .game-card .cover.empty{ display:flex; align-items:center; justify-content:center; color: var(--text-soft); font-size: 0.82rem; border: 1px dashed var(--line); }
+  .game-card h2{ font-size: 1.35rem; margin-bottom: 8px; }
+  .row{ display:flex; align-items:center; gap: 12px; flex-wrap:wrap; font-size: 0.82rem; color: var(--text-soft); margin-bottom: 12px; }
+  .badge{ display:inline-flex; align-items:center; gap:7px; padding: 3px 12px; border-radius: 999px; border: 1px solid var(--line); color: var(--text); }
+  .badge::before{ content:''; width:7px; height:7px; border-radius:50%; background: var(--warn); }
+  .badge.listo::before{ background: var(--ok); }
+  .game-card p{ color: var(--text-soft); margin: 0 0 14px; font-size: 0.95rem; max-width: 56ch; }
+  .progress{ height: 6px; background: var(--bg); border-radius: 999px; overflow:hidden; border: 1px solid var(--line); max-width: 380px; }
+  .progress > div{ height:100%; background: linear-gradient(90deg, var(--aqua-dim), var(--aqua)); }
+  .pct{ font-size: 0.78rem; color: var(--text-soft); margin-top: 5px; }
+  .go{ margin-top: 14px; font-size: 0.9rem; color: var(--aqua); }
+  .helper-note{ color: var(--text-soft); }
+
+  footer{ padding: 40px 0 60px; color: var(--text-soft); font-size: 0.88rem; border-top: 1px solid var(--line); }
+  footer .wrap{ display:flex; justify-content:space-between; flex-wrap: wrap; gap:12px; }
+  footer .social{ display:flex; gap:18px; align-items:center; }
+  footer .social a:hover{ color: var(--aqua); }
+
+  @media (max-width: 760px){
+    .game-card{ grid-template-columns: 1fr; }
+  }
+  @media (max-width: 620px){
+    nav ul{ gap: 14px; font-size: 0.85rem; }
+    .hero-glow{ width: 280px; height: 280px; top: -100px; right: -100px; }
+  }
+</style>
+</head>
+<body>
+
+  <header>
+    <div class="wrap header-row">
+      <a class="brand" href="index.html">
+        <img id="brand-logo" src="logo.jpg" alt="Emblema Aqua Auditore">
+        <div class="brand-name">Aqua <span>Auditore</span></div>
+      </a>
+      <nav>
+        <ul>
+          <li><a href="index.html#inicio">Inicio</a></li>
+          <li><a href="index.html#diarios">Diarios de juego</a></li>
+          <li><a href="index.html#pensamientos">Pensamientos</a></li>
+          <li><a href="videos.html">YouTube</a></li>
+          <li><a href="ia.html" class="active">Desarrollo IA</a></li>
+          <li><a href="index.html#sobre-mi">Sobre mí</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="hero-glow"></div>
+    <div class="wrap hero-inner">
+      <div class="crumb"><a href="ia.html">Desarrollo IA</a> &nbsp;/&nbsp; Videojuegos en Desarrollo</div>
+      <h1 id="juegos-title">Mis videojuegos</h1>
+      <p class="lede" id="juegos-lede">Lo que estoy construyendo: su avance, su devlog y, cuando se puede, la versión jugable.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="games" id="games"><p class="helper-note">Cargando...</p></div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap">
+      <span>© 2026 Aqua Auditore</span>
+      <div class="social">
+        <a href="#" id="link-twitch" target="_blank" rel="noopener">Twitch</a>
+        <a href="#" id="link-discord" target="_blank" rel="noopener">Discord</a>
+        <a href="#" id="link-x" target="_blank" rel="noopener">X</a>
+        <a href="login.html">Iniciar sesión</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = 'https://dolhldpxkkkyqfqkerbg.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRvbGhsZHB4a2treXFmcWtlcmJnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwODE4ODQsImV4cCI6MjEwNDY1Nzg4NH0.kqVg2n8T1p2smpck1uJLQLW07V5s71pidn4SJGaZbSk';
+    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    function escapeHtml(str){
+      const div = document.createElement('div');
+      div.textContent = str || '';
+      return div.innerHTML;
+    }
+
+    function gameCardHtml(g){
+      const pct = Math.max(0, Math.min(100, parseInt(g.progreso, 10) || 0));
+      const listo = /public|termin|lanz/i.test(g.estado || '');
+      return `
+      <a class="game-card" href="juego.html?id=${g.id}">
+        ${g.portada
+          ? `<img class="cover" src="${g.portada}" alt="" loading="lazy">`
+          : `<div class="cover empty">Sin portada</div>`}
+        <div>
+          <h2>${escapeHtml(g.nombre)}</h2>
+          <div class="row">
+            <span class="badge ${listo ? 'listo' : ''}">${escapeHtml(g.estado || 'En desarrollo')}</span>
+            <span>${escapeHtml(g.motor || '')}</span>
+          </div>
+          <p>${escapeHtml((g.descripcion || '').split(/\r?\n/)[0])}</p>
+          <div class="progress"><div style="width:${pct}%"></div></div>
+          <div class="pct">${pct}% de avance</div>
+          <div class="go">Ver el proyecto →</div>
+        </div>
+      </a>`;
+    }
+
+    async function loadGames(){
+      const { data, error } = await db.from('juegos').select('*').order('orden', {ascending:true});
+      const el = document.getElementById('games');
+      if(error){
+        console.error(error);
+        el.innerHTML = '<p class="helper-note">No se pudieron cargar los juegos (¿existe la tabla juegos?)</p>';
+        return;
+      }
+      el.innerHTML = data.map(gameCardHtml).join('') || '<p class="helper-note">Aún no hay juegos publicados.</p>';
+    }
+
+    async function loadSiteContent(){
+      const { data, error } = await db.from('site_content').select('key,value').in('key', ['logo_image','link_twitch','link_discord','link_x','juegos_title','juegos_lede']);
+      if(error) return;
+      const map = { logo_image:'brand-logo', link_twitch:'link-twitch', link_discord:'link-discord', link_x:'link-x' };
+      for(const row of data){
+        if(!row.value) continue;
+        if(row.key === 'logo_image') document.getElementById('brand-logo').src = row.value;
+        else if(row.key === 'juegos_title') document.getElementById('juegos-title').textContent = row.value;
+        else if(row.key === 'juegos_lede') document.getElementById('juegos-lede').textContent = row.value;
+        else if(map[row.key]) document.getElementById(map[row.key]).href = row.value;
+      }
+    }
+
+    loadSiteContent();
+    loadGames();
+  </script>
+
+</body>
+</html>

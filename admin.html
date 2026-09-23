@@ -151,6 +151,10 @@
   .tab-panel.active{ display:block; }
   .panel-title{ font-size: 1rem; margin-bottom: 6px; }
 
+  .ficha-juego{ margin-bottom: 20px; }
+  .ficha-juego .j-borrar{ margin-right: auto; }
+  .ficha-juego code{ background: var(--bg); padding: 2px 6px; border-radius: 4px; }
+
   /* Gestor de imágenes del carrusel */
   .hero-grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-bottom: 14px; }
   .hero-item{ position:relative; border-radius: 8px; overflow:hidden; border: 1px solid var(--line); background:#000; }
@@ -250,7 +254,7 @@
   <section class="section" id="juego">
     <div class="wrap">
       <div class="section-head">
-        <h2>Videojuego en Desarrollo</h2>
+        <h2>Videojuegos — devlog</h2>
         <button class="btn primary" onclick="openModal('juego')">+ Nuevo avance</button>
       </div>
       <div id="juego-list"><p class="helper-note">Cargando...</p></div>
@@ -369,35 +373,13 @@
   <section class="section" id="ajustes-juego">
     <div class="wrap">
       <div class="section-head">
-        <h2>Ficha del videojuego</h2>
+        <h2>Mis videojuegos</h2>
+        <button class="btn primary" type="button" id="btn-nuevo-juego">+ Nuevo juego</button>
       </div>
-      <form class="panel" id="form-juego">
-        <div class="img-preview">
-          <img id="prev-juego_portada" alt="Portada" style="border-radius:8px; width:128px; height:72px; object-fit:cover;">
-          <div>
-            <label style="margin-bottom:6px;">Portada (captura del juego, 16:9)<input type="file" id="file-juego_portada" accept="image/*"></label>
-            <button type="button" id="reset-juego_portada">Quitar portada</button>
-          </div>
-        </div>
-        <div class="panel-row">
-          <label>Nombre del juego<input type="text" id="c-juego_nombre" placeholder="Ecos del Abismo"></label>
-          <label>Motor / tecnología<input type="text" id="c-juego_motor" placeholder="Hecho en Godot 4"></label>
-          <label>Estado<input type="text" id="c-juego_estado" placeholder="Prototipo, Alpha, Beta, Publicado..."></label>
-          <label>Avance (0 a 100)<input type="number" id="c-juego_progreso" min="0" max="100" placeholder="35"></label>
-        </div>
-        <label>Descripción<textarea id="c-juego_descripcion" rows="3" placeholder="Metroidvania en pixel art con ambientación dark fantasy..."></textarea></label>
-        <div class="panel-row">
-          <label>Ya funciona (una cosa por línea)<textarea id="c-juego_hecho" rows="5" placeholder="Doble salto&#10;Impulso&#10;Guardado automático"></textarea></label>
-          <label>En camino (una cosa por línea)<textarea id="c-juego_pendiente" rows="5" placeholder="Segundo jefe&#10;Música&#10;Mapa del mundo"></textarea></label>
-        </div>
-        <label>Ruta de la versión jugable (déjalo así salvo que la cambies)<input type="text" id="c-juego_url_jugar" placeholder="juego/index.html"></label>
-        <div class="panel-actions">
-          <span class="save-status" id="status-juego"></span>
-          <button type="submit" class="btn primary">Guardar ficha del juego</button>
-        </div>
-      </form>
+      <div id="juegos-fichas"><p class="helper-note">Cargando...</p></div>
     </div>
   </section>
+
 
   <section class="section" id="ajustes-videos">
     <div class="wrap">
@@ -417,6 +399,39 @@
   </section>
 
   </div>
+
+  <template id="tpl-ficha-juego">
+    <form class="panel ficha-juego">
+      <div class="img-preview">
+        <img class="j-portada-prev" alt="Portada" style="border-radius:8px; width:128px; height:72px; object-fit:cover;">
+        <div>
+          <label style="margin-bottom:6px;">Portada (captura, 16:9)<input type="file" class="j-portada-file" accept="image/*"></label>
+          <button type="button" class="j-portada-reset">Quitar portada</button>
+        </div>
+      </div>
+      <div class="panel-row">
+        <label>Nombre del juego<input type="text" class="j-nombre" required></label>
+        <label>Motor / tecnología<input type="text" class="j-motor" placeholder="Hecho en Godot 4"></label>
+        <label>Estado<input type="text" class="j-estado" placeholder="Prototipo, Alpha, Beta, Publicado..."></label>
+        <label>Avance (0 a 100)<input type="number" class="j-progreso" min="0" max="100"></label>
+      </div>
+      <label>Descripción<textarea class="j-descripcion" rows="3"></textarea></label>
+      <div class="panel-row">
+        <label>Ya funciona (una cosa por línea)<textarea class="j-hecho" rows="5"></textarea></label>
+        <label>En camino (una cosa por línea)<textarea class="j-pendiente" rows="5"></textarea></label>
+      </div>
+      <div class="panel-row">
+        <label>Carpeta de la versión jugable<input type="text" class="j-slug" placeholder="mi-juego"></label>
+        <label>Ruta completa (opcional, si no usas la carpeta)<input type="text" class="j-url" placeholder="juego/mi-juego/index.html"></label>
+      </div>
+      <p class="helper-note" style="font-size:0.85rem; margin:-6px 0 16px;">La versión jugable se sube a <code class="j-ruta-ayuda">juego/&lt;carpeta&gt;/</code></p>
+      <div class="panel-actions">
+        <span class="save-status j-status"></span>
+        <button type="button" class="link-btn j-borrar">Eliminar juego</button>
+        <button type="submit" class="btn primary">Guardar juego</button>
+      </div>
+    </form>
+  </template>
 
   <div style="height:40px;"></div>
 
@@ -455,6 +470,11 @@
         <input type="hidden" id="f-section">
         <label>Título<input type="text" id="f-title" required></label>
         <label>Fecha<input type="date" id="f-date" required></label>
+        <div id="f-juego-wrap">
+          <label>¿De qué juego es este avance?
+            <select id="f-juego-id"></select>
+          </label>
+        </div>
         <div id="f-game-wrap">
           <label>Juego
             <select id="f-game">
@@ -580,11 +600,13 @@
     function iaCardHtml(p, section){
       const [y,m,d] = p.date.split('-');
       const monthAbbr = MONTHS[parseInt(m,10)-1] || '';
+      const jg = section === 'juego' ? juegos.find(j => j.id === p.juego_id) : null;
       return `
       <article class="post">
         <div class="date"><strong>${d}</strong>${monthAbbr}</div>
         <div>
           <h3>${escapeHtml(p.title)}</h3>
+          ${jg ? `<div class="meta" style="font-size:0.8rem; color:var(--text-soft); margin-bottom:6px;">${escapeHtml(jg.nombre)}</div>` : ''}
           ${p.image ? `<img class="post-image" src="${p.image}" alt="">` : ''}
           <p>${escapeHtml(p.body)}</p>
           ${adminButtonsHtml(section, p.id)}
@@ -613,8 +635,8 @@
 
     /* ---------- Pestañas: Publicar / Ajustes de la página ---------- */
     const SUBNAV = {
-      publicar: [['#diarios','Diarios'],['#pensamientos','Pensamientos'],['#ia','Desarrollo IA'],['#juego','Videojuego'],['#videos','YouTube']],
-      ajustes:  [['#inicio','Inicio'],['#sobre-mi','Sobre mí'],['#marca','Logo y redes'],['#ajustes-ia','Desarrollo IA'],['#ajustes-juego','Videojuego'],['#ajustes-videos','YouTube']]
+      publicar: [['#diarios','Diarios'],['#pensamientos','Pensamientos'],['#ia','Desarrollo IA'],['#juego','Devlog juegos'],['#videos','YouTube']],
+      ajustes:  [['#inicio','Inicio'],['#sobre-mi','Sobre mí'],['#marca','Logo y redes'],['#ajustes-ia','Desarrollo IA'],['#ajustes-juego','Mis videojuegos'],['#ajustes-videos','YouTube']]
     };
     function showTab(name){
       document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
@@ -637,9 +659,8 @@
 
     const TEXT_KEYS = ['hero_kicker','hero_title','hero_lede','about_title','about_body','link_twitch','link_discord','link_x',
                        'videos_kicker','videos_title','videos_lede','ia_kicker','ia_title','ia_lede',
-                       'juego_nombre','juego_motor','juego_estado','juego_progreso','juego_descripcion',
-                       'juego_hecho','juego_pendiente','juego_url_jugar'];
-    const IMAGE_KEYS = ['about_image','logo_image','juego_portada'];
+                       'juegos_title','juegos_lede'];
+    const IMAGE_KEYS = ['about_image','logo_image'];
 
     async function loadSiteContent(){
       const { data, error } = await db.from('site_content').select('key,value');
@@ -708,11 +729,120 @@
       e.preventDefault();
       saveSiteContent(['ia_kicker','ia_title','ia_lede'], 'status-ia-head');
     });
-    document.getElementById('form-juego').addEventListener('submit', e => {
-      e.preventDefault();
-      saveSiteContent(['juego_portada','juego_nombre','juego_motor','juego_estado','juego_progreso','juego_descripcion',
-                       'juego_hecho','juego_pendiente','juego_url_jugar'], 'status-juego');
+
+    /* ---------- Fichas de los videojuegos (tabla juegos) ---------- */
+    let juegos = [];
+
+    function slugify(txt){
+      return (txt || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'juego';
+    }
+
+    async function loadJuegos(){
+      const { data, error } = await db.from('juegos').select('*').order('orden', {ascending:true});
+      const box = document.getElementById('juegos-fichas');
+      if(error){
+        console.error(error);
+        box.innerHTML = '<p class="helper-note">No se pudieron cargar los juegos (¿ejecutaste supabase_juegos.sql?)</p>';
+        return;
+      }
+      juegos = data;
+      box.innerHTML = '';
+      if(!juegos.length) box.innerHTML = '<p class="helper-note">Aún no hay juegos. Pulsa «+ Nuevo juego».</p>';
+      for(const g of juegos) box.appendChild(fichaJuego(g));
+      rellenarSelectorJuegos();
+    }
+
+    function fichaJuego(g){
+      const form = document.getElementById('tpl-ficha-juego').content.firstElementChild.cloneNode(true);
+      const $ = sel => form.querySelector(sel);
+      $('.j-nombre').value      = g.nombre || '';
+      $('.j-motor').value       = g.motor || '';
+      $('.j-estado').value      = g.estado || '';
+      $('.j-progreso').value    = g.progreso ?? 0;
+      $('.j-descripcion').value = g.descripcion || '';
+      $('.j-hecho').value       = g.hecho || '';
+      $('.j-pendiente').value   = g.pendiente || '';
+      $('.j-slug').value        = g.slug || '';
+      $('.j-url').value         = g.url_jugar || '';
+      $('.j-portada-prev').src  = g.portada || EMPTY_IMAGE;
+      $('.j-ruta-ayuda').textContent = `juego/${g.slug || '<carpeta>'}/`;
+
+      let portadaPendiente;   // undefined = sin cambios, File = nueva, null = quitar
+      $('.j-portada-file').addEventListener('change', e => {
+        const file = e.target.files[0];
+        if(!file) return;
+        portadaPendiente = file;
+        $('.j-portada-prev').src = URL.createObjectURL(file);
+      });
+      $('.j-portada-reset').addEventListener('click', () => {
+        portadaPendiente = null;
+        $('.j-portada-file').value = '';
+        $('.j-portada-prev').src = EMPTY_IMAGE;
+      });
+      $('.j-slug').addEventListener('input', e => {
+        $('.j-ruta-ayuda').textContent = `juego/${e.target.value || '<carpeta>'}/`;
+      });
+
+      $('.j-borrar').addEventListener('click', async () => {
+        if(!confirm(`¿Eliminar «${g.nombre}»? También se borrarán sus avances del devlog.`)) return;
+        const { error } = await db.from('juegos').delete().eq('id', g.id);
+        if(error){ alert('No se pudo eliminar: ' + error.message); return; }
+        await loadJuegos();
+      });
+
+      form.addEventListener('submit', async e => {
+        e.preventDefault();
+        const status = $('.j-status');
+        status.textContent = 'Guardando...';
+        const obj = {
+          nombre:      $('.j-nombre').value.trim(),
+          motor:       $('.j-motor').value.trim() || null,
+          estado:      $('.j-estado').value.trim() || null,
+          progreso:    Math.max(0, Math.min(100, parseInt($('.j-progreso').value, 10) || 0)),
+          descripcion: $('.j-descripcion').value.trim() || null,
+          hecho:       $('.j-hecho').value.trim() || null,
+          pendiente:   $('.j-pendiente').value.trim() || null,
+          slug:        slugify($('.j-slug').value || $('.j-nombre').value),
+          url_jugar:   $('.j-url').value.trim() || null
+        };
+        try {
+          if(portadaPendiente !== undefined){
+            obj.portada = portadaPendiente ? await uploadImage(portadaPendiente, 'juegos', 1200) : null;
+          }
+        } catch(err){ status.textContent = 'Error al subir la portada: ' + err.message; return; }
+
+        const { error } = await db.from('juegos').update(obj).eq('id', g.id);
+        if(error){ status.textContent = 'Error: ' + error.message; return; }
+        status.textContent = 'Guardado ✓';
+        setTimeout(() => { if(status.textContent === 'Guardado ✓') status.textContent = ''; }, 2500);
+        await loadJuegos();
+      });
+
+      return form;
+    }
+
+    document.getElementById('btn-nuevo-juego').addEventListener('click', async () => {
+      const nombre = prompt('Nombre del juego nuevo:');
+      if(!nombre) return;
+      const { error } = await db.from('juegos').insert([{
+        nombre: nombre.trim(),
+        slug: slugify(nombre),
+        motor: 'Hecho en Godot 4',
+        estado: 'Prototipo',
+        progreso: 0,
+        orden: juegos.length
+      }]);
+      if(error){ alert('No se pudo crear: ' + error.message); return; }
+      await loadJuegos();
     });
+
+    function rellenarSelectorJuegos(){
+      const sel = document.getElementById('f-juego-id');
+      const actual = sel.value;
+      sel.innerHTML = juegos.map(g => `<option value="${g.id}">${escapeHtml(g.nombre)}</option>`).join('');
+      if(actual) sel.value = actual;
+    }
 
     /* ---------- Videos de YouTube (tabla `videos`) ---------- */
     let videos = [];
@@ -1014,6 +1144,7 @@
       document.getElementById('f-section').value = section;
       document.getElementById('f-id').value = id || '';
       document.getElementById('f-game-wrap').style.display  = section === 'diario' ? 'block' : 'none';
+      document.getElementById('f-juego-wrap').style.display = section === 'juego' ? 'block' : 'none';
       const withImage = section === 'diario' || section === 'ia' || section === 'juego';
       document.getElementById('f-media-wrap').style.display = withImage ? 'block' : 'none';
       document.getElementById('f-video-wrap').style.display = section === 'diario' ? 'block' : 'none';
@@ -1036,6 +1167,7 @@
             document.getElementById('f-game').value = p.game || 'destiny';
             document.getElementById('f-video').value = p.video || '';
           }
+          if(section === 'juego' && p.juego_id) document.getElementById('f-juego-id').value = p.juego_id;
           if(withImage){
             if(p.image){
               currentImageData = p.image;
@@ -1088,6 +1220,9 @@
         obj.game = document.getElementById('f-game').value;
         obj.video = document.getElementById('f-video').value.trim();
       }
+      if(section === 'juego'){
+        obj.juego_id = document.getElementById('f-juego-id').value || null;
+      }
       if(section === 'diario' || section === 'ia' || section === 'juego'){
         if(pendingPostImage){
           try { obj.image = await uploadImage(pendingPostImage, 'posts'); }
@@ -1122,6 +1257,7 @@
         window.location.href = 'login.html';
         return;
       }
+      await loadJuegos();
       await Promise.all([loadSiteContent(), loadPosts(), loadVideos()]);
     }
     init();
